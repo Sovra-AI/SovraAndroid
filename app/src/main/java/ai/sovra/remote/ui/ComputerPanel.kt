@@ -181,7 +181,7 @@ fun ComputerPanel(
  * the controls inside, and one finger scrolls the page while not zoomed.
  */
 @Composable
-private fun ZoomBox(content: @Composable () -> Unit) {
+internal fun ZoomBox(content: @Composable () -> Unit) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     val zoom = rememberTransformableState { change, pan, _ ->

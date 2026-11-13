@@ -27,7 +27,7 @@ Add entries under **Unreleased** as part of the change that introduces them.
   Settings with Advanced options.
 - Builds the Expo app's Iroh transport crate (one copy for both apps) with `cargo-ndk` and
   binds it with uniffi's Kotlin generator (`scripts/build-rust.sh`).
-- Pinch to zoom on the Computer tab's picture; the typing bar takes the keyboard at once;
+- Pinch to zoom on the Computer tab's picture (instrumented test: `connectedDebugAndroidTest`); the typing bar takes the keyboard at once;
   status bar icons follow the app's appearance.
 - Kotlin port of the protocol client and screen readers, with JUnit tests against the
   desktop's own fixtures and an in-memory desktop.
