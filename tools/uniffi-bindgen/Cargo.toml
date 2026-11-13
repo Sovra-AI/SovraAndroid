@@ -3,6 +3,7 @@ name = "uniffi-bindgen"
 version = "0.1.0"
 edition = "2024"
 publish = false
+license = "LicenseRef-SustainableUse-1.0"
 
 # Host-only generator for the Kotlin bindings. Must match the transport crate's uniffi.
 [dependencies]

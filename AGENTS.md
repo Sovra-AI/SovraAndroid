@@ -1,4 +1,4 @@
-# Sovra for Android — agent rules
+# SovraAndroid — agent rules
 
 Native Kotlin/Compose twin of the Expo app in `../SovraReactNative`. The desktop contract is
 canonical: `../SovraHarnessRust/docs/remote-control.md`. Keep behaviour identical to the
