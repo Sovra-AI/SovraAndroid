@@ -11,7 +11,7 @@ lives. Engineering rules for humans and coding agents are in [AGENTS.md](../AGEN
 | Android SDK and NDK | compileSdk 37; `scripts/build-rust.sh` uses `ANDROID_HOME` and the newest NDK unless `ANDROID_NDK_HOME` is set |
 | Rust through rustup | `rustup target add aarch64-linux-android x86_64-linux-android` |
 | `cargo-ndk` | `cargo install cargo-ndk` |
-| SovraiOS checkout | Holds the shared transport crate; point `RUST_CRATE` at its `modules/sovra-remote/rust`, or check it out as `../SovraReactNative` |
+| SovraiOS checkout | Holds the shared transport crate; point `RUST_CRATE` at its `modules/sovra-remote/rust`, or check it out next to this repo as `../SovraiOS` |
 
 ## Build and run
 

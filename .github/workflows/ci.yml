@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The Rust transport is one crate for both apps; it lives in SovraiOS.
+      - uses: actions/checkout@v4
+        with:
+          repository: Sovra-AI/SovraiOS
+          path: SovraiOS
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: SovraiOS/modules/sovra-remote/rust
+      - run: cargo install cargo-ndk --locked
+      - run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" > /dev/null
+      - run: scripts/build-rust.sh
+        env:
+          RUST_CRATE: ${{ github.workspace }}/SovraiOS/modules/sovra-remote/rust
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew :app:testDebugUnitTest :app:assembleDebug

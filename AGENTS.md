@@ -1,8 +1,8 @@
 # SovraAndroid — agent rules
 
-Native Kotlin/Compose twin of the Expo app in `../SovraReactNative`. The desktop contract is
+Native Kotlin/Compose twin of [SovraiOS](https://github.com/Sovra-AI/SovraiOS) (checked out next to this repo). The desktop contract is
 canonical: `../SovraHarnessRust/docs/remote-control.md`. Keep behaviour identical to the
-Expo app: a change to its `src/remote/` belongs here too, and the other way round.
+SovraiOS app: a change to its `src/remote/` belongs here too, and the other way round.
 
 ## Commands
 
@@ -22,7 +22,7 @@ scripts/build-rust.sh                 # Rust transport + Kotlin bindings (needs 
   leftovers; the activity drops it from its intent once read.
 - Wire changes: copy the desktop fixtures into `app/src/test/resources/fixtures/` and keep
   `ProtocolTest` byte-equal. Keep `iroh` pinned to the desktop's version.
-- The Rust transport lives only in `../SovraReactNative/modules/sovra-remote/rust`; change it
+- The Rust transport lives only in SovraiOS's `modules/sovra-remote/rust`; change it
   there. `app/src/main/java/uniffi/` and `app/src/main/jniLibs/` are generated; never commit them.
 - Colours only from `ui/Theme.kt` (ported from the desktop). 44 dp touch targets and a
   label on every control.

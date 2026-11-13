@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 # Build the Iroh transport for Android and generate its Kotlin bindings.
-# The crate is the Expo app's (one copy for both apps): a sibling checkout of
-# SovraReactNative by default, or RUST_CRATE=/path/to/modules/sovra-remote/rust.
+# The crate is SovraiOS's (one copy for both apps): a sibling checkout of SovraiOS
+# (or its older name, SovraReactNative), or RUST_CRATE=/path/to/modules/sovra-remote/rust.
 #   scripts/build-rust.sh            arm64-v8a (phones and Apple-silicon emulators)
 #   ABIS="arm64-v8a x86_64" scripts/build-rust.sh
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
-crate="${RUST_CRATE:-$root/../SovraReactNative/modules/sovra-remote/rust}"
+crate="${RUST_CRATE:-}"
+if [ -z "$crate" ]; then
+  for sibling in SovraiOS SovraReactNative; do
+    [ -f "$root/../$sibling/modules/sovra-remote/rust/Cargo.toml" ] && { crate="$root/../$sibling/modules/sovra-remote/rust"; break; }
+  done
+fi
+crate="${crate:-$root/../SovraiOS/modules/sovra-remote/rust}"
 [ -f "$crate/Cargo.toml" ] || { echo "Transport crate not found at $crate (set RUST_CRATE)." >&2; exit 1; }
 crate="$(cd "$crate" && pwd)"
 sdk="${ANDROID_HOME:-$HOME/Library/Android/sdk}"

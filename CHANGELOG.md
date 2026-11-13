@@ -8,6 +8,14 @@ Add entries under **Unreleased** as part of the change that introduces them.
 
 ## [Unreleased]
 
+### Changed
+
+- License text, Code of Conduct and code owners match SovraHarness and SovraiOS word for word
+  (Sovra's Sustainable Use License). The README matches SovraiOS's and describes the current
+  screens; `scripts/build-rust.sh` finds a sibling `SovraiOS` checkout by itself.
+- CI builds the shared transport, runs the unit tests and builds the app on every pull
+  request; Dependabot keeps GitHub Actions and Gradle dependencies current.
+
 ### Fixed
 
 - Leaving the Chat tab while it brought Sovra's chat up left the app "working" for good,
@@ -16,8 +24,8 @@ Add entries under **Unreleased** as part of the change that introduces them.
 
 ### Added
 
-- **Fair-code license and public repository files.** Source is under n8n's Sustainable
-  Use License with Sovra as the licensor, the same as SovraHarness and SovraiOS, with a
+- **Fair-code license and public repository files.** Source is under Sovra's Sustainable
+  Use License, word for word the same as SovraHarness and SovraiOS, with a
   Code of Conduct, security policy, contributing guide, issue and pull request templates,
   and development, architecture, and documentation guides in the shared Sovra style. The
   README uses the Sovra layout with the product logo.

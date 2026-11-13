@@ -1,10 +1,10 @@
-# Test parity with the Expo app
+# Test parity with SovraiOS
 
-Every Jest test in `SovraReactNative/src/**/__tests__` and the JUnit test that covers the same
-case here (`app/src/test/java/ai/sovra/remote/protocol/`). Some Kotlin tests cover two Expo
-cases; none of the Expo cases is left out. Keep this table current when either side changes.
+Every Jest test in SovraiOS's `src/**/__tests__` and the JUnit test that covers the same
+case here (`app/src/test/java/ai/sovra/remote/protocol/`). Some Kotlin tests cover two SovraiOS
+cases; none of the SovraiOS cases is left out. Keep this table current when either side changes.
 
-| Expo test (file › name) | Kotlin test |
+| SovraiOS test (file › name) | Kotlin test |
 | --- | --- |
 | client › pairs once, then reconnects with Hello without a new invitation | ClientTest.pairsOnceThenReconnectsWithHelloWithoutANewInvitation |
 | client › uses up a fresh code when an already-paired phone scans it again | ClientTest.usesUpAFreshCodeWhenAnAlreadyPairedPhoneScansItAgain |
@@ -64,6 +64,6 @@ cases; none of the Expo cases is left out. Keep this table current when either s
 | markdown › leaves plain text alone | ParityTest.leavesPlainTextAlone |
 
 Android-only: `ReadersTest.keepsEveryChatSeenInTheSidebarsOrder` (the Chats tab's merge, which
-lives in a component on the Expo side), `ProtocolTest.pairsThenControlsWithFreshRevisions`,
+lives in a component in SovraiOS), `ProtocolTest.pairsThenControlsWithFreshRevisions`,
 `ProtocolTest.neverReplaysInputWhoseReplyWasLost`, and the on-device
 `ZoomBoxTest.pinchZoomsInAndTapsStillReachTheControls`.

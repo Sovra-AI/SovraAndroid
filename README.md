@@ -27,10 +27,9 @@ Pair once by scanning a code shown by [SovraHarness](https://github.com/Sovra-AI
 on your computer. After that, opening the app connects to that computer by itself, on the
 same Wi-Fi or over mobile data, end-to-end encrypted.
 
-> **License:** Source on `main` is available under n8n's Sustainable Use License,
-> which n8n's docs allow other projects to use. This is fair-code:
-> source-available, and not an OSI open-source license. Enterprise files have
-> separate terms. See [License](#license).
+> **License:** Source on `main` is available under Sovra's Sustainable Use License.
+> This is fair-code: source-available, and not an OSI open-source license.
+> Enterprise files have separate terms. See [License](#license).
 
 ## What you can do
 
@@ -54,8 +53,9 @@ No Play Store build or APK release is published yet; [build from source](#build-
 1. On your computer, in Sovra: **Skills → Use Sovra from your phone** (or `/remote-control`).
 2. In the app: **Scan the code**, or open the `sovra://remote-control` link on the phone.
    The code works once and expires after five minutes.
-3. Next time, just open the app. If it says **Start remote control on your computer**, run
-   the skill again: phone access switches off whenever Sovra restarts. Your phone stays paired.
+3. Next time, just open the app. If it says **Turn on phone control** or **Open Sovra on
+   your computer**, run the skill again: phone access switches off whenever Sovra restarts.
+   Your phone stays paired.
 
 To revoke a phone, choose **Forget** for it in Sovra on your computer. **Settings → Forget
 this computer** on the phone only removes the computer from the phone.
@@ -64,13 +64,13 @@ this computer** on the phone only removes the computer from the phone.
 
 You need JDK 17+, the Android SDK (compileSdk 37) and NDK, Rust through rustup, and
 `cargo-ndk`. The Rust transport lives in [SovraiOS](https://github.com/Sovra-AI/SovraiOS)
-(`modules/sovra-remote/rust`), one crate for both apps, so clone it alongside:
+(`modules/sovra-remote/rust`), one crate for both apps, so clone it alongside (or set
+`RUST_CRATE` to that folder):
 
 ```sh
 git clone https://github.com/Sovra-AI/SovraAndroid.git
 git clone https://github.com/Sovra-AI/SovraiOS.git
 cd SovraAndroid
-export RUST_CRATE=../SovraiOS/modules/sovra-remote/rust   # default: ../SovraReactNative/…
 cargo install cargo-ndk
 rustup target add aarch64-linux-android x86_64-linux-android
 scripts/build-rust.sh                           # Iroh transport for arm64-v8a + Kotlin bindings
@@ -96,8 +96,9 @@ the [documentation](docs/README.md) for current behavior.
   device transfer.
 - The app works only while it is open on screen. It cannot wake a closed app or a sleeping
   computer, and there are no push notifications.
-- Reading replies uses desktop screenshots where the desktop can capture them; otherwise
-  only labelled text is shown.
+- Replies are read from the labels Sovra gives each message, so they show as text with
+  Sovra's formatting. Desktops without those labels fall back to a picture of the
+  conversation where they can capture one.
 
 See [Security](SECURITY.md) for reporting and the
 [desktop phone-control contract](https://github.com/Sovra-AI/SovraHarness/blob/main/docs/remote-control.md)
@@ -109,6 +110,7 @@ for the protocol.
 | --- | --- |
 | `scripts/build-rust.sh` | Build the shared Rust transport and generate the Kotlin bindings |
 | `./gradlew :app:testDebugUnitTest` | Protocol tests against the desktop fixtures; must pass before every commit |
+| `./gradlew :app:connectedDebugAndroidTest` | UI test on a device or emulator (pinch to zoom) |
 | `./gradlew :app:installDebug` | Debug build and install on a device or emulator |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the pull request workflow and
@@ -135,6 +137,7 @@ Read [Architecture](docs/architecture.md) for the layers and the rules the clien
 | --- | --- |
 | [Development](docs/development.md) | Prerequisites, builds, tests, and the project layout |
 | [Architecture](docs/architecture.md) | Layers, protocol rules, pairing, and secrets |
+| [Test parity](docs/test-parity.md) | Each SovraiOS test and the Android test that covers it |
 | [Documentation index](docs/README.md) | All guides |
 
 ## Contributing and support
@@ -152,7 +155,7 @@ public issues.
 
 ## License
 
-[LICENSE](LICENSE) contains n8n's Sustainable Use License, Version 1.0, with Sovra as the
+[LICENSE](LICENSE) is Sovra's Sustainable Use License, Version 1.0, with Sovra as the
 licensor. This is a fair-code license with use and distribution restrictions, not an OSI
 open-source license. It applies to source on `main`; the license excludes other branches.
 Files with `.ee.` in their name or `.ee` in their directory name are covered separately by
