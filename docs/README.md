@@ -17,6 +17,7 @@ the iPhone app with the same screens is [SovraiOS](https://github.com/Sovra-AI/S
 
 - [Contributing](../CONTRIBUTING.md): issues, branches, pull requests, and required checks.
 - [Development](development.md): the Rust transport, Gradle builds, and generated files.
+- [Test parity](test-parity.md): each SovraiOS test and the Android test that covers it.
 - [Documentation maintenance](documentation.md): writing and checking these guides.
 
 ## Understand the implementation

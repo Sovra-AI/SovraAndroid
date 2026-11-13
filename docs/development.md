@@ -16,7 +16,7 @@ lives. Engineering rules for humans and coding agents are in [AGENTS.md](../AGEN
 ## Build and run
 
 ```sh
-export RUST_CRATE=../SovraiOS/modules/sovra-remote/rust
+# Finds ../SovraiOS (or ../SovraReactNative) by itself; otherwise set RUST_CRATE.
 scripts/build-rust.sh                           # arm64-v8a: phones and Apple-silicon emulators
 ABIS="arm64-v8a x86_64" scripts/build-rust.sh   # also Intel emulators
 ./gradlew :app:installDebug                     # id ai.sovra.remote.native
@@ -33,11 +33,15 @@ Debug builds use the application id `ai.sovra.remote.native`; release builds use
 ## Checks
 
 ```sh
-./gradlew :app:testDebugUnitTest
+./gradlew :app:testDebugUnitTest              # protocol and screen-reader tests (JVM)
+./gradlew :app:connectedDebugAndroidTest      # UI test on a device or emulator
 ```
 
-Run it before every commit. This repository has no CI workflow yet, so record the checks you
-ran in the pull request.
+Run the unit tests before every commit, and the UI test when you change the Computer tab's
+picture. The connected test installs and then uninstalls the debug app, so pair it again
+afterwards. CI ([.github/workflows/ci.yml](../.github/workflows/ci.yml)) checks out
+SovraiOS for the shared crate, builds it, runs the unit tests and builds the debug app on
+every pull request and push to `main`. It does not run the connected test.
 
 ## Stack
 
@@ -47,7 +51,7 @@ ran in the pull request.
 | QR scanning | CameraX and ZXing |
 | Secure storage | Android Keystore AES key encrypting the phone key in private preferences |
 | Transport | SovraiOS's Rust crate `modules/sovra-remote/rust` (Iroh 1.4.1 QUIC, same version as the desktop), bound with uniffi's Kotlin generator |
-| Tests | JUnit for the protocol and screen readers |
+| Tests | JUnit for the protocol and screen readers ([parity with SovraiOS](test-parity.md)); a Compose UI test on a device for pinch to zoom |
 
 Dependency versions live in [gradle/libs.versions.toml](../gradle/libs.versions.toml).
 
@@ -61,4 +65,5 @@ Dependency versions live in [gradle/libs.versions.toml](../gradle/libs.versions.
 | `app/src/main/java/ai/sovra/remote/data/` | Storage, the native transport, and app state. |
 | `app/src/main/java/ai/sovra/remote/ui/` | Compose screens and the Sovra theme (`Theme.kt`, ported from the desktop). |
 | `app/src/test/` | JUnit tests and the desktop fixtures. |
+| `app/src/androidTest/` | Compose UI tests that need a device or emulator. |
 | `scripts/build-rust.sh` | Builds the transport and generates bindings. |
