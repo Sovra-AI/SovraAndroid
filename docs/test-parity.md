@@ -71,6 +71,7 @@ cases; none of the SovraiOS cases is left out. Keep this table current when eith
 | connection-status › names the path in plain words | ConnectionStatusTest.namesThePathInPlainWords |
 | connection-status › keeps counting and explains a slow pairing | ConnectionStatusTest.keepsCountingAndExplainsASlowPairing |
 | preferences › uses every path unless a testing option narrows it | PreferencesTest.usesEveryPathUnlessATestingOptionNarrowsIt |
+| connection-status › shortLogLine keeps the time, level, target and message of a transport log line | ConnectionStatusTest.keepsTheTimeLevelTargetAndMessageOfATransportLogLine |
 
 Android-only: `ReadersTest.keepsEveryChatSeenInTheSidebarsOrder` (the Chats tab's merge, which
 lives in a component in SovraiOS), `ProtocolTest.pairsThenControlsWithFreshRevisions`,

@@ -14,6 +14,8 @@ import uniffi.sovra_remote_ffi.PhoneEndpoint
 import uniffi.sovra_remote_ffi.TransportException
 import uniffi.sovra_remote_ffi.generatePhoneSecret
 import uniffi.sovra_remote_ffi.phoneDeviceId
+import uniffi.sovra_remote_ffi.startDeveloperLog
+import uniffi.sovra_remote_ffi.developerLog as nativeDeveloperLog
 import uniffi.sovra_remote_ffi.DesktopConnection as NativeConnection
 
 private fun translate(error: Throwable): TransportFailure = when (error) {
@@ -53,7 +55,12 @@ private class Connection(private val inner: NativeConnection) : DesktopConnectio
     override fun close() = inner.disconnect()
 }
 
+/** The transport's recent log lines (iroh's relay, DNS and path events), oldest first. */
+fun developerLog(): List<String> = nativeDeveloperLog()
+
 suspend fun createNativeTransport(storage: Storage, reach: Reach): PhoneTransport {
+    // Always kept, in memory only, so a failure can be explained without Developer mode first.
+    startDeveloperLog()
     val secret = phoneSecret(storage)
     val endpoint = try {
         if (reach == Reach.Relay) PhoneEndpoint.bindRelayOnly(secret) else PhoneEndpoint.bind(secret, reach == Reach.Local)

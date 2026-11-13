@@ -8,6 +8,7 @@ import ai.sovra.remote.data.Phase
 import ai.sovra.remote.data.RemoteStore
 import ai.sovra.remote.data.ConnectionProgress
 import ai.sovra.remote.data.Tone
+import ai.sovra.remote.data.developerLog
 import ai.sovra.remote.data.routeLabel
 import ai.sovra.remote.protocol.Intent
 import ai.sovra.remote.protocol.NEW_CHAT_LABEL
@@ -201,8 +202,15 @@ fun RemoteScreen(store: RemoteStore, onSettings: () -> Unit, onUnpaired: () -> U
         state.notice?.let { NoticeBanner(it.tone, it.text) { store.setNotice(null) } }
 
         val progress = state.progress
+        var details by remember { mutableStateOf(false) }
+        if (!state.preferences.developer && !live && (progress?.attempt ?: 0) > 1) {
+            SButton(if (details) "Hide technical details" else "Show technical details", { details = !details }, compact = true, variant = ButtonVariant.Ghost)
+        }
         if (progress != null && !live && (state.phase == Phase.Connecting || state.phase == Phase.Unreachable)) {
             ConnectionCard(progress, state.desktop?.name ?: "your computer", state.detail) { store.retryNow() }
+        }
+        if (state.preferences.developer || details) {
+            DeveloperPanel(state.phase.name.lowercase(), state.route?.name?.lowercase(), ::developerLog)
         }
 
         val help = recovery(state.phase)

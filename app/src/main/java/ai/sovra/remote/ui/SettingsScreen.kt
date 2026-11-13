@@ -92,6 +92,9 @@ fun SettingsScreen(store: RemoteStore, storage: Storage, onDone: () -> Unit, onF
                 SettingRow("Same Wi-Fi only", "For testing: no relays, so mobile data will not work.") {
                     Switch(preferences.localOnly, { toggle(preferences.copy(localOnly = it, relayOnly = preferences.relayOnly && !it)) }, colors = colors)
                 }
+                SettingRow("Developer mode", "Shows the transport's own log on the remote screen, with a button to copy it.") {
+                    Switch(preferences.developer, { store.setPreferences(preferences.copy(developer = it)) }, colors = colors)
+                }
                 SettingRow("Encrypted relay only", "For testing: skips direct connections, the way a phone on a strict network reaches your computer.") {
                     Switch(preferences.relayOnly, { toggle(preferences.copy(relayOnly = it, localOnly = preferences.localOnly && !it)) }, colors = colors)
                 }

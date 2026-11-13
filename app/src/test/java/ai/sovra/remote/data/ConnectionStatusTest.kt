@@ -71,4 +71,19 @@ class ConnectionStatusTest {
         assertEquals("Pairing securely with your computer… 2 s", pairingStatus(2400))
         assertTrue(pairingStatus(9000).contains("9 s. Over mobile data"))
     }
+
+    @Test
+    fun keepsTheTimeLevelTargetAndMessageOfATransportLogLine() {
+        assertEquals(
+            "14:57:55.674 D client::tls: failed to connect: No route to host",
+            shortLogLine(
+                "2026-11-13T14:57:55.674598Z DEBUG endpoint{id=7e7e}:relay-actor:active-relay{url=https://aps1-1.relay.n0.iroh.link./}:dialing:connect{addr=[2a01::1]:443}: iroh_relay::client::tls: failed to connect: No route to host",
+            ),
+        )
+        assertEquals(
+            "14:57:55.402 I sovra_remote_ffi: dialling the computer computer=2c28 relays=4",
+            shortLogLine("2026-11-13T14:57:55.402290Z  INFO sovra_remote_ffi: dialling the computer computer=2c28 relays=4"),
+        )
+        assertEquals("not a log line", shortLogLine("not a log line"))
+    }
 }

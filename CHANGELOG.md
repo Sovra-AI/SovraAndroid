@@ -10,6 +10,11 @@ Add entries under **Unreleased** as part of the change that introduces them.
 
 ### Added
 
+- **Transport log.** Developer mode (Advanced settings) shows iroh's own log of relay dials,
+  TLS results and lookups, kept in memory only, with Copy details; failed pairings and retries
+  offer Show technical details without it. The shared transport also dials through every
+  default relay, so a computer that moved relay after pairing is found without address lookup.
+
 - **Connects from anywhere, not only the same Wi-Fi.** The shared transport resolves relay and
   address-lookup hosts with the phone's own DNS (DNS64/NAT64, VPN and Private DNS aware)
   instead of fixed public resolvers that many mobile networks block, so the phone reaches its

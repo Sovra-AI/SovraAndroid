@@ -109,3 +109,15 @@ fun pairingStatus(elapsedMs: Long): String {
         else -> "Pairing securely with your computer…"
     }
 }
+
+private val LOG_LINE = Regex("""^\d{4}-\d{2}-\d{2}T(\d{2}:\d{2}:\d{2}\.\d{3})\d*Z\s+(\w+)\s+(.*)$""")
+private val LOG_TARGET = Regex("""(?:^|: )((?:[a-z_][a-z0-9_]*::)*[a-z_][a-z0-9_]*): (.*)$""")
+
+/** Shortens one transport log line for a phone screen: time, level initial, target and message. */
+fun shortLogLine(line: String): String {
+    val match = LOG_LINE.matchEntire(line) ?: return line
+    val (time, level, rest) = match.destructured
+    val target = LOG_TARGET.find(rest)
+    val body = if (target != null) "${target.groupValues[1].replace(Regex("^iroh(_relay)?::"), "")}: ${target.groupValues[2]}" else rest
+    return "$time ${level.take(1)} $body"
+}

@@ -38,6 +38,8 @@ data class Preferences(
     val localOnly: Boolean = false,
     /** Testing the off-network path: no direct sockets, everything through the encrypted relay. */
     val relayOnly: Boolean = false,
+    /** Show the transport's own log and a Copy details button on the remote screen. */
+    val developer: Boolean = false,
     /** Fetch a screenshot with each refresh, when the desktop supports it. */
     val screenshots: Boolean = false,
 ) {
@@ -111,6 +113,7 @@ class Storage(context: Context) {
         appearance = runCatching { Appearance.valueOf(prefs.getString(APPEARANCE, null)!!) }.getOrDefault(Appearance.System),
         localOnly = prefs.getBoolean(LOCAL_ONLY, false),
         relayOnly = prefs.getBoolean(RELAY_ONLY, false),
+        developer = prefs.getBoolean(DEVELOPER, false),
         screenshots = prefs.getBoolean(SCREENSHOTS, false),
     )
 
@@ -119,6 +122,7 @@ class Storage(context: Context) {
             .putString(APPEARANCE, preferences.appearance.name)
             .putBoolean(LOCAL_ONLY, preferences.localOnly)
             .putBoolean(RELAY_ONLY, preferences.relayOnly)
+            .putBoolean(DEVELOPER, preferences.developer)
             .putBoolean(SCREENSHOTS, preferences.screenshots)
             .apply()
     }
@@ -133,6 +137,7 @@ class Storage(context: Context) {
         const val APPEARANCE = "sovra.appearance"
         const val LOCAL_ONLY = "sovra.local-only"
         const val RELAY_ONLY = "sovra.relay-only"
+        const val DEVELOPER = "sovra.developer"
         const val SCREENSHOTS = "sovra.screenshots"
     }
 }

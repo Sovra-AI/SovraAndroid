@@ -4,6 +4,8 @@
  */
 package ai.sovra.remote.ui
 
+import ai.sovra.remote.data.developerLog
+
 import ai.sovra.remote.data.Phase
 import ai.sovra.remote.data.RemoteStore
 import ai.sovra.remote.protocol.Outcome
@@ -192,6 +194,9 @@ fun PairingLink(store: RemoteStore, names: PairingNames, link: String, onDone: (
         val message = failure
         if (message != null) {
             NoticeBanner(ai.sovra.remote.data.Tone.Danger, message)
+            var details by remember { mutableStateOf(false) }
+            SButton(if (details) "Hide technical details" else "Show technical details", { details = !details }, Modifier.fillMaxWidth(), variant = ButtonVariant.Ghost)
+            if (details) DeveloperPanel("pairing failed", null, ::developerLog)
             SButton("Back to pairing", { onDone(false) }, Modifier.fillMaxWidth(), variant = ButtonVariant.Primary)
         } else {
             CircularProgressIndicator(color = LocalPalette.current.ring)
