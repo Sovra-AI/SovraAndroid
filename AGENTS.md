@@ -1,7 +1,8 @@
 # SovraAndroid — agent rules
 
-Native Kotlin/Compose twin of [SovraiOS](https://github.com/Sovra-AI/SovraiOS) (checked out next to this repo). The desktop contract is
-canonical: `../SovraHarnessRust/docs/remote-control.md`. Keep behaviour identical to the
+Native Kotlin/Compose twin of [SovraiOS](https://github.com/Sovra-AI/SovraiOS), whose Rust transport it
+builds (see [Development](docs/development.md)). The desktop contract is canonical:
+[SovraHarness `docs/remote-control.md`](https://github.com/Sovra-AI/SovraHarness/blob/main/docs/remote-control.md). Keep behaviour identical to the
 SovraiOS app: a change to its `src/remote/` belongs here too, and the other way round.
 
 ## Commands
