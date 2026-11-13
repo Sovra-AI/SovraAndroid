@@ -200,6 +200,9 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
                     _state.update { it.copy(progress = null) }
                     return // needs the person, not a retry
                 }
+                // The network may have changed under the endpoint (Wi-Fi to mobile data): bind a
+                // fresh one on the next try instead of retrying on sockets of the old network.
+                if (view.code == ErrorCode.Unreachable) resetClient()
                 retryLater()
             }
         }

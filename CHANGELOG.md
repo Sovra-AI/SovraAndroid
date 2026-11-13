@@ -49,6 +49,10 @@ Add entries under **Unreleased** as part of the change that introduces them.
 
 ### Fixed
 
+- **Switching networks recovers.** After a failed try the phone binds a fresh endpoint, so
+  moving from Wi-Fi to mobile data no longer leaves it retrying on the old network's sockets.
+  A failure now says which half failed: this network reaching the encrypted relay, or the
+  computer behind it.
 - Leaving the Chat tab while it brought Sovra's chat up left the app "working" for good,
   disabling every control. Flows now run in the app's scope and always finish.
 - Enabled primary buttons (e.g. Type) could lose their colour, leaving white text on white.
