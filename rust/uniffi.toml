@@ -1,0 +1,8 @@
+# Kotlin-only names. `close` clashes with AutoCloseable.close (which frees the Rust object)
+# and an error field called `message` clashes with Throwable.message.
+[bindings.kotlin.rename]
+"PhoneEndpoint.close" = "shutdown"
+"DesktopConnection.close" = "disconnect"
+"TransportError.InvalidAddress.message" = "reason"
+"TransportError.Unreachable.message" = "reason"
+"TransportError.Protocol.message" = "reason"
