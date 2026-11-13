@@ -31,8 +31,30 @@ follow [GitHub's contribution-guideline guidance](https://docs.github.com/en/com
   other repositories with full GitHub URLs, not sibling-checkout paths.
 - Keep examples synthetic. Never commit keys, pairing links, personal logs, or machine paths.
 
+## Documentation inventory
+
+Every document in this repository, what kind it is, and what it must be checked against
+when it changes. Each was reviewed against this guide (evidence, plain language, relative
+links, no dates or promises, no machine paths or secrets) when the open-source files were
+aligned with SovraHarness.
+
+| Document | Kind | Verify against |
+| --- | --- | --- |
+| [README](../README.md) | Overview and quick start | Screens and their labels, Gradle tasks, `scripts/`, SovraiOS's README (same shape) |
+| [CONTRIBUTING](../CONTRIBUTING.md) | Contributor guide | [ci.yml](../.github/workflows/ci.yml), SovraHarness's CONTRIBUTING |
+| [SECURITY](../SECURITY.md) | Policy | `data/Storage.kt`, the manifest and data-extraction rules, the desktop's SECURITY |
+| [CODE_OF_CONDUCT](../CODE_OF_CONDUCT.md), [LICENSE](../LICENSE), [LICENSE_EE](../LICENSE_EE.md) | Policy | SovraHarness's copies, word for word apart from the product name |
+| [AGENTS](../AGENTS.md) | Engineering rules | Code layout, Gradle tasks, `scripts/` |
+| [CHANGELOG](../CHANGELOG.md) | Release history | Commits since the last release; one Added, Changed and Fixed section each |
+| [Development](development.md) | How-to | [build.gradle.kts](../app/build.gradle.kts), [libs.versions.toml](../gradle/libs.versions.toml), [build-rust.sh](../scripts/build-rust.sh), [ci.yml](../.github/workflows/ci.yml) |
+| [Architecture](architecture.md) | Explanation | `protocol/`, `data/`, the shared Rust transport, and their tests |
+| [Test parity](test-parity.md) | Reference | SovraiOS's Jest tests and `app/src/test/` |
+| [Documentation index](README.md) | Index | This inventory |
+| [Pull request](../.github/pull_request_template.md) and issue templates | Contributor forms | The checks in CONTRIBUTING |
+
 ## Verify a change
 
 Check that every relative link resolves, run `./gradlew :app:testDebugUnitTest` and `git diff --check`, and
 review Markdown and Mermaid rendering on GitHub before merging. Run documented commands when
 feasible and report checks that need unavailable devices, accounts, or a desktop checkout.
+When you add, move, or remove a document, update the inventory above.
