@@ -27,15 +27,27 @@ data class SavedDesktop(val address: PeerAddress, val name: String, val pairedAt
 
 enum class Appearance { System, Dark, Light }
 
+/** How the phone may reach the computer. */
+enum class Reach { Internet, Local, Relay }
+
 data class Preferences(
     val appearance: Appearance = Appearance.System,
     /** Refresh cadence while the remote screen is open (ms). Must stay under 5 s. */
     val refreshMs: Long = 2000,
     /** Testing on one Wi-Fi only: no relays or Internet address lookup. */
     val localOnly: Boolean = false,
+    /** Testing the off-network path: no direct sockets, everything through the encrypted relay. */
+    val relayOnly: Boolean = false,
     /** Fetch a screenshot with each refresh, when the desktop supports it. */
     val screenshots: Boolean = false,
-)
+) {
+    /** Same Wi-Fi only wins if old saved settings somehow have both. */
+    val reach: Reach get() = when {
+        localOnly -> Reach.Local
+        relayOnly -> Reach.Relay
+        else -> Reach.Internet
+    }
+}
 
 class Storage(context: Context) {
     private val prefs = context.getSharedPreferences("sovra", Context.MODE_PRIVATE)
@@ -98,6 +110,7 @@ class Storage(context: Context) {
     fun loadPreferences(): Preferences = Preferences(
         appearance = runCatching { Appearance.valueOf(prefs.getString(APPEARANCE, null)!!) }.getOrDefault(Appearance.System),
         localOnly = prefs.getBoolean(LOCAL_ONLY, false),
+        relayOnly = prefs.getBoolean(RELAY_ONLY, false),
         screenshots = prefs.getBoolean(SCREENSHOTS, false),
     )
 
@@ -105,6 +118,7 @@ class Storage(context: Context) {
         prefs.edit()
             .putString(APPEARANCE, preferences.appearance.name)
             .putBoolean(LOCAL_ONLY, preferences.localOnly)
+            .putBoolean(RELAY_ONLY, preferences.relayOnly)
             .putBoolean(SCREENSHOTS, preferences.screenshots)
             .apply()
     }
@@ -118,6 +132,7 @@ class Storage(context: Context) {
         const val DESKTOP = "sovra.desktop.v1"
         const val APPEARANCE = "sovra.appearance"
         const val LOCAL_ONLY = "sovra.local-only"
+        const val RELAY_ONLY = "sovra.relay-only"
         const val SCREENSHOTS = "sovra.screenshots"
     }
 }

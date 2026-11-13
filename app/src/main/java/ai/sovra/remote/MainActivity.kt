@@ -25,7 +25,7 @@ import androidx.compose.runtime.setValue
 
 class SovraApp : Application() {
     val storage by lazy { Storage(this) }
-    val store by lazy { RemoteStore(storage) { localOnly -> createNativeTransport(storage, localOnly) } }
+    val store by lazy { RemoteStore(storage) { reach -> createNativeTransport(storage, reach) } }
     val names by lazy { PairingNames(Build.MODEL ?: "My phone") }
 }
 

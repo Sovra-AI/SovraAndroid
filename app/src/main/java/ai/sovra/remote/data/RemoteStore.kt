@@ -70,7 +70,7 @@ class Backoff(private val minMs: Long = 1000, private val maxMs: Long = 30_000) 
     }
 }
 
-typealias TransportFactory = suspend (localOnly: Boolean) -> PhoneTransport
+typealias TransportFactory = suspend (reach: Reach) -> PhoneTransport
 
 class RemoteStore(private val storage: Storage, private val factory: TransportFactory) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -104,7 +104,7 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
 
     private suspend fun ensureClient(): RemoteClient? {
         client?.let { return it }
-        val transport = factory(_state.value.preferences.localOnly)
+        val transport = factory(_state.value.preferences.reach)
         return RemoteClient(transport, _state.value.desktop?.address).also { client = it }
     }
 
@@ -147,7 +147,7 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
             ?: return fail(ErrorCode.InvalidInvitation, "That is not a Sovra pairing code. Scan the code shown on your computer.")
         // A dedicated client: the shared one may be mid-refresh for another computer.
         val remote = try {
-            RemoteClient(factory(_state.value.preferences.localOnly), null)
+            RemoteClient(factory(_state.value.preferences.reach), null)
         } catch (error: Exception) {
             return fail(ErrorCode.Unreachable, "Could not start a secure connection: ${error.message}")
         }

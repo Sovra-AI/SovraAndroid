@@ -90,7 +90,10 @@ fun SettingsScreen(store: RemoteStore, storage: Storage, onDone: () -> Unit, onF
                     Switch(preferences.screenshots, { toggle(preferences.copy(screenshots = it)) }, colors = colors)
                 }
                 SettingRow("Same Wi-Fi only", "For testing: no relays, so mobile data will not work.") {
-                    Switch(preferences.localOnly, { toggle(preferences.copy(localOnly = it)) }, colors = colors)
+                    Switch(preferences.localOnly, { toggle(preferences.copy(localOnly = it, relayOnly = preferences.relayOnly && !it)) }, colors = colors)
+                }
+                SettingRow("Encrypted relay only", "For testing: skips direct connections, the way a phone on a strict network reaches your computer.") {
+                    Switch(preferences.relayOnly, { toggle(preferences.copy(relayOnly = it, localOnly = preferences.localOnly && !it)) }, colors = colors)
                 }
             }
             Card {

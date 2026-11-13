@@ -53,10 +53,10 @@ private class Connection(private val inner: NativeConnection) : DesktopConnectio
     override fun close() = inner.disconnect()
 }
 
-suspend fun createNativeTransport(storage: Storage, localOnly: Boolean): PhoneTransport {
+suspend fun createNativeTransport(storage: Storage, reach: Reach): PhoneTransport {
     val secret = phoneSecret(storage)
     val endpoint = try {
-        PhoneEndpoint.bind(secret, localOnly)
+        if (reach == Reach.Relay) PhoneEndpoint.bindRelayOnly(secret) else PhoneEndpoint.bind(secret, reach == Reach.Local)
     } catch (error: TransportException) {
         throw translate(error)
     }
