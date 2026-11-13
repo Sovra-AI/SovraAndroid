@@ -49,14 +49,14 @@ policy.
   byte-for-byte against fixtures copied from the desktop.
 - Generated Kotlin bindings (`app/src/main/java/uniffi/`) and built native
   libraries (`app/src/main/jniLibs/`) are not committed.
-- Run `./gradlew :app:testDebugUnitTest` before every change; this repository has
-  no CI workflow yet.
+- CI builds the shared transport and runs the unit tests on every pull request;
+  Dependabot proposes GitHub Actions and Gradle updates.
 
 ## Data and execution boundaries
 
 The app controls the Sovra window on the paired computer only: it inspects its
-controls, presses them, types, and reads screenshots where the desktop provides
-them. It has no access to the computer's operating system, files, or shell beyond
+controls, presses them, types, and reads the text Sovra labels (messages and
+controls), plus screenshots where the desktop provides them. It has no access to the computer's operating system, files, or shell beyond
 what Sovra's own window allows.
 
 Traffic uses Iroh QUIC with the desktop's key pinned, directly or through Iroh's

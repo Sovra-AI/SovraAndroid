@@ -75,6 +75,8 @@ Do not force-push `main`.
 
 ## Continuous integration
 
-This repository has no GitHub Actions workflow yet. Reviewers rely on the checks
-recorded in the pull request, so run `./gradlew :app:testDebugUnitTest` and say
-which device or emulator you used for UI changes.
+[.github/workflows/ci.yml](.github/workflows/ci.yml) runs on every pull request and push
+to `main`: it checks out SovraiOS for the shared Rust crate, builds it, runs
+`./gradlew :app:testDebugUnitTest`, and builds the debug app. CI must be green. It does not
+run `./gradlew :app:connectedDebugAndroidTest`, which needs a device or emulator, so say in
+the pull request which one you used for UI changes.
