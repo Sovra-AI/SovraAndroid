@@ -12,6 +12,7 @@ import ai.sovra.remote.protocol.Intent
 import ai.sovra.remote.protocol.Outcome
 import ai.sovra.remote.protocol.PhoneTransport
 import ai.sovra.remote.protocol.RemoteClient
+import ai.sovra.remote.protocol.Route
 import ai.sovra.remote.protocol.Skill
 import ai.sovra.remote.protocol.decodeTicket
 import ai.sovra.remote.protocol.fail
@@ -50,6 +51,10 @@ data class RemoteState(
     /** Sovra's `/` skills, read once from the computer (null until loaded). */
     val skills: List<Skill>? = null,
     val preferences: Preferences = Preferences(),
+    /** Live progress while connecting or retrying; null once connected. */
+    val progress: ConnectionProgress? = null,
+    /** How the connection reaches the computer, while connected. */
+    val route: Route? = null,
 )
 
 /** Bounded exponential backoff with full jitter, 1 s to 30 s, as the desktop contract asks. */
@@ -114,6 +119,28 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
         timer = if (live) scope.launch { delay(delayMs); refresh() } else null
     }
 
+    /** Record a step of the current connection attempt. */
+    private fun reaching(step: ConnectionProgress.Step) {
+        _state.update {
+            val progress = it.progress
+            if (progress == null) {
+                it.copy(progress = ConnectionProgress(step, 1, System.currentTimeMillis(), null))
+            } else {
+                // A new try after a wait counts as the next attempt.
+                val next = progress.step == ConnectionProgress.Step.Waiting && step != ConnectionProgress.Step.Waiting
+                it.copy(progress = progress.copy(step = step, attempt = if (next) progress.attempt + 1 else progress.attempt, retryAt = null))
+            }
+        }
+    }
+
+    /** The try failed: wait, then try again. */
+    private fun retryLater() {
+        val delayMs = backoff.next()
+        reaching(ConnectionProgress.Step.Waiting)
+        _state.update { it.copy(progress = it.progress?.copy(retryAt = System.currentTimeMillis() + delayMs)) }
+        schedule(delayMs)
+    }
+
     suspend fun pair(link: String, phoneName: String, desktopName: String): Outcome<Unit> {
         // The link is a bearer credential: it is decoded here and never stored or logged.
         val ticket = decodeTicket(link)
@@ -141,13 +168,16 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
 
     suspend fun refresh() {
         if (_state.value.desktop == null) return
+        val reconnecting = client?.connected != true
+        if (reconnecting) reaching(if (client == null) ConnectionProgress.Step.Starting else ConnectionProgress.Step.Reaching)
         val remote = try {
             ensureClient()
         } catch (error: Exception) {
             _state.update { it.copy(phase = Phase.Unreachable, detail = error.message) }
-            schedule(backoff.next())
+            retryLater()
             return
         } ?: return
+        if (reconnecting) reaching(ConnectionProgress.Step.Reaching)
         when (val view = remote.inspect()) {
             is Outcome.Ok -> {
                 backoff.reset()
@@ -156,15 +186,21 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
                     (remote.screenshot() as? Outcome.Ok)?.value
                 } else null
                 _state.update {
-                    it.copy(phase = Phase.Connected, snapshot = view.value, screenshot = screenshot, updatedAt = System.currentTimeMillis(), detail = null)
+                    it.copy(
+                        phase = Phase.Connected, snapshot = view.value, screenshot = screenshot, updatedAt = System.currentTimeMillis(),
+                        detail = null, progress = null, route = remote.route,
+                    )
                 }
                 schedule(_state.value.preferences.refreshMs)
             }
             is Outcome.Failed -> {
                 val phase = phaseFor(view.code)
-                _state.update { it.copy(phase = if (phase == Phase.Connected) it.phase else phase, detail = view.message) }
-                if (phase == Phase.Revoked || phase == Phase.Incompatible) return // needs the person, not a retry
-                schedule(backoff.next())
+                _state.update { it.copy(phase = if (phase == Phase.Connected) it.phase else phase, detail = view.message, route = remote.route) }
+                if (phase == Phase.Revoked || phase == Phase.Incompatible) {
+                    _state.update { it.copy(progress = null) }
+                    return // needs the person, not a retry
+                }
+                retryLater()
             }
         }
     }
@@ -173,6 +209,18 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
         if (live) return
         live = true
         backoff.reset()
+        // The old session ended when the screen was left: say so until a new one answers.
+        _state.update { it.copy(progress = null, phase = if (it.phase == Phase.Connected) Phase.Connecting else it.phase) }
+        scope.launch { refresh() }
+    }
+
+    /** Skip the wait and try to connect now. */
+    fun retryNow() {
+        if (!live) return startLive()
+        if (_state.value.progress?.step != ConnectionProgress.Step.Waiting) return // a try is already running
+        backoff.reset()
+        timer?.cancel()
+        timer = null
         scope.launch { refresh() }
     }
 
@@ -182,6 +230,7 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
         timer = null
         // Leaving the foreground closes the endpoint: no background traffic.
         scope.launch { resetClient() }
+        _state.update { it.copy(progress = null, route = null) }
     }
 
     /** The Computer tab (and the Chat tab without labelled messages) needs screenshots. */

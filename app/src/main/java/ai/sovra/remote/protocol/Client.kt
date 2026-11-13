@@ -71,6 +71,9 @@ class RemoteClient(private val transport: PhoneTransport, private var desktop: P
 
     val connected: Boolean get() = session?.connection?.isClosed() == false
 
+    /** How the current session reaches the desktop, or null when not connected. */
+    val route: Route? get() = if (connected) session?.connection?.route() else null
+
     /**
      * Pair with a scanned invitation. Tries Hello first so a lost Paired reply can be
      * recovered without a new QR. Returns the address to persist on success.

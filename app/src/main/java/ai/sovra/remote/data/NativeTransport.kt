@@ -7,6 +7,7 @@ package ai.sovra.remote.data
 import ai.sovra.remote.protocol.DesktopConnection
 import ai.sovra.remote.protocol.PeerAddress
 import ai.sovra.remote.protocol.PhoneTransport
+import ai.sovra.remote.protocol.Route
 import ai.sovra.remote.protocol.TransportFailure
 import ai.sovra.remote.protocol.TransportFailureKind
 import uniffi.sovra_remote_ffi.PhoneEndpoint
@@ -38,6 +39,11 @@ fun phoneId(storage: Storage): String? = storage.loadPhoneSecret()?.let { runCat
 
 private class Connection(private val inner: NativeConnection) : DesktopConnection {
     override fun peer() = inner.peer()
+    override fun route() = when (inner.route()) {
+        "direct" -> Route.Direct
+        "relay" -> Route.Relay
+        else -> Route.Unknown
+    }
     override fun isClosed() = inner.isClosed()
     override suspend fun request(json: String): String = try {
         inner.request(json)

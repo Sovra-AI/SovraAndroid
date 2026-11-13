@@ -1,7 +1,7 @@
 # Test parity with SovraiOS
 
 Every Jest test in SovraiOS's `src/**/__tests__` and the JUnit test that covers the same
-case here (`app/src/test/java/ai/sovra/remote/protocol/`). Some Kotlin tests cover two SovraiOS
+case here (`app/src/test/java/ai/sovra/remote/`). Some Kotlin tests cover two SovraiOS
 cases; none of the SovraiOS cases is left out. Keep this table current when either side changes.
 
 | SovraiOS test (file › name) | Kotlin test |
@@ -62,8 +62,21 @@ cases; none of the SovraiOS cases is left out. Keep this table current when eith
 | markdown › splits headings, paragraphs, lists, code and tables | ScreensTest.parsesRepliesIntoBlocks |
 | markdown › marks bold, italic and inline code | ParityTest.marksBoldItalicAndInlineCode |
 | markdown › leaves plain text alone | ParityTest.leavesPlainTextAlone |
+| connection-status › shows each step as it happens | ConnectionStatusTest.showsEachStepAsItHappens |
+| connection-status › explains slow first tries without blaming the person | ConnectionStatusTest.explainsSlowFirstTries |
+| connection-status › counts down to the next try and offers to try now | ConnectionStatusTest.countsDownToTheNextTryAndOffersToTryNow |
+| connection-status › keeps the last failure in view while trying again | ConnectionStatusTest.keepsTheLastFailureInViewWhileTryingAgain |
+| connection-status › lists what to check after repeated failures | ConnectionStatusTest.listsWhatToCheckAfterRepeatedFailures |
+| connection-status › stays quiet for a quick reconnect, then explains | ConnectionStatusTest.staysQuietForAQuickReconnectThenExplains |
+| connection-status › names the path in plain words | ConnectionStatusTest.namesThePathInPlainWords |
+| connection-status › keeps counting and explains a slow pairing | ConnectionStatusTest.keepsCountingAndExplainsASlowPairing |
 
 Android-only: `ReadersTest.keepsEveryChatSeenInTheSidebarsOrder` (the Chats tab's merge, which
 lives in a component in SovraiOS), `ProtocolTest.pairsThenControlsWithFreshRevisions`,
 `ProtocolTest.neverReplaysInputWhoseReplyWasLost`, and the on-device
 `ZoomBoxTest.pinchZoomsInAndTapsStillReachTheControls`.
+
+SovraiOS-only: the two store tests in `src/state/__tests__/remote.test.ts` (failed tries are
+counted and the route is reported; "Try now" never starts a second try). `RemoteStore` here
+needs an Android `Context` for its storage, so its progress logic was checked on the emulator
+instead; the wording it shows is covered by `ConnectionStatusTest`.

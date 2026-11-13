@@ -6,7 +6,9 @@ package ai.sovra.remote.ui
 
 import ai.sovra.remote.data.Phase
 import ai.sovra.remote.data.RemoteStore
+import ai.sovra.remote.data.ConnectionProgress
 import ai.sovra.remote.data.Tone
+import ai.sovra.remote.data.routeLabel
 import ai.sovra.remote.protocol.Intent
 import ai.sovra.remote.protocol.NEW_CHAT_LABEL
 import ai.sovra.remote.protocol.Outcome
@@ -68,11 +70,8 @@ private fun status(phase: Phase): Status = when (phase) {
     Phase.Incompatible -> Status("Update needed") { LocalPalette.current.danger }
 }
 
-/** Plain-language recovery for each state; desktop messages are shown, never parsed. */
+/** Plain-language recovery for each state; desktop messages are shown, never parsed. Connecting and unreachable show live progress instead (`ConnectionCard`). */
 private fun recovery(phase: Phase): Pair<String, String>? = when (phase) {
-    Phase.Connecting -> "Connecting to your computer…" to "This can take a few seconds on mobile data."
-    Phase.Unreachable -> "Open Sovra on your computer" to
-        "Make sure your computer is awake and online, Sovra is open, and “Use Sovra from your phone” is switched on in Sovra (it switches off whenever Sovra restarts). We keep trying while this screen is open."
     Phase.Disabled -> "Turn on phone control" to
         "In Sovra on your computer, open Skills and choose “Use Sovra from your phone”. For your safety it switches off whenever Sovra restarts."
     Phase.Busy -> "Sovra is busy" to "Another phone may be in control, or a new phone is being paired. Try again in a moment."
@@ -178,7 +177,13 @@ fun RemoteScreen(store: RemoteStore, onSettings: () -> Unit, onUnpaired: () -> U
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.small)) {
             Column(Modifier.weight(1f)) {
                 SText(state.desktop?.name ?: "Your computer", style = Type.sectionTitle, maxLines = 1)
-                val current = status(state.phase)
+                val trying = state.progress?.let { it.step != ConnectionProgress.Step.Waiting } == true &&
+                    (state.phase == Phase.Connecting || state.phase == Phase.Unreachable)
+                val current = when {
+                    state.phase == Phase.Connected -> status(Phase.Connected).copy(label = routeLabel(state.route))
+                    trying -> status(Phase.Connecting)
+                    else -> status(state.phase)
+                }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Space.snug),
@@ -195,13 +200,18 @@ fun RemoteScreen(store: RemoteStore, onSettings: () -> Unit, onUnpaired: () -> U
 
         state.notice?.let { NoticeBanner(it.tone, it.text) { store.setNotice(null) } }
 
+        val progress = state.progress
+        if (progress != null && !live && (state.phase == Phase.Connecting || state.phase == Phase.Unreachable)) {
+            ConnectionCard(progress, state.desktop?.name ?: "your computer", state.detail) { store.retryNow() }
+        }
+
         val help = recovery(state.phase)
         if (help != null && !live) {
             Card {
                 SText(help.first, style = Type.sectionTitle)
                 SText(help.second, tone = TextTone.Secondary)
                 state.detail?.let { SText(it, style = Type.caption, tone = TextTone.Muted) }
-                if (state.phase != Phase.Connecting) SButton("Try again", { store.startLive() }, Modifier.fillMaxWidth(), variant = ButtonVariant.Primary)
+                SButton("Try again", { store.startLive() }, Modifier.fillMaxWidth(), variant = ButtonVariant.Primary)
             }
         }
 

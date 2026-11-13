@@ -8,6 +8,21 @@ Add entries under **Unreleased** as part of the change that introduces them.
 
 ## [Unreleased]
 
+### Added
+
+- **Connecting shows its progress.** While the phone connects, it shows each step in plain
+  words, how long it has been trying, and a **Try now** button between attempts; after
+  repeated failures it lists what to check on the computer. Once connected, the status says
+  whether the link is direct or through an encrypted relay.
+- **Connects from anywhere, not only the same Wi-Fi.** The shared transport resolves relay and
+  address-lookup hosts with the phone's own DNS (DNS64/NAT64, VPN and Private DNS aware)
+  instead of fixed public resolvers that many mobile networks block, so the phone reaches its
+  computer over mobile data or another network through Iroh's encrypted relay.
+- **Clear connection progress.** While connecting, the remote screen shows each step, how long
+  it has been trying, the attempt, the last failure and a countdown with **Try now**; pairing
+  shows a ticking elapsed time. Once connected the status says "Connected directly" or
+  "Connected through an encrypted relay". Same wording and tests as SovraiOS.
+
 ### Changed
 
 - License text, Code of Conduct and code owners match SovraHarness and SovraiOS word for word

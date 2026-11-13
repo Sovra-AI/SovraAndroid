@@ -55,7 +55,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -154,6 +156,7 @@ fun PairScreen(store: RemoteStore, names: PairingNames, onScan: () -> Unit, onPa
             }
         }
         error?.let { NoticeBanner(ai.sovra.remote.data.Tone.Danger, it) }
+        pairingStatusText(busy)?.let { NoticeBanner(ai.sovra.remote.data.Tone.Info, it) }
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SButton("Scan the code", onScan, Modifier.fillMaxWidth(), variant = ButtonVariant.Primary, enabled = !busy)
             SButton(if (busy) "Pairing…" else "Paste a pairing link instead", pasteLink, Modifier.fillMaxWidth(), variant = ButtonVariant.Ghost, enabled = !busy)
@@ -192,7 +195,7 @@ fun PairingLink(store: RemoteStore, names: PairingNames, link: String, onDone: (
             SButton("Back to pairing", { onDone(false) }, Modifier.fillMaxWidth(), variant = ButtonVariant.Primary)
         } else {
             CircularProgressIndicator(color = LocalPalette.current.ring)
-            SText("Pairing securely with your computer…", tone = TextTone.Secondary)
+            SText(pairingStatusText(true).orEmpty(), Modifier.semantics { liveRegion = LiveRegionMode.Polite }, tone = TextTone.Secondary)
         }
     }
 }
