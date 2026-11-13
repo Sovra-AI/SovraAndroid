@@ -22,7 +22,8 @@ scripts/build-rust.sh                 # Rust transport + Kotlin bindings (needs 
   leftovers; the activity drops it from its intent once read.
 - Wire changes: copy the desktop fixtures into `app/src/test/resources/fixtures/` and keep
   `ProtocolTest` byte-equal. Keep `iroh` pinned to the desktop's version.
-- `app/src/main/java/uniffi/` and `app/src/main/jniLibs/` are generated; never commit them.
+- The Rust transport lives only in `../SovraReactNative/modules/sovra-remote/rust`; change it
+  there. `app/src/main/java/uniffi/` and `app/src/main/jniLibs/` are generated; never commit them.
 - Colours only from `ui/Theme.kt` (ported from the desktop). 44 dp touch targets and a
   label on every control.
 - Commits use gitmoji (`✨ feat(chat): …`) and update `CHANGELOG.md` under `[Unreleased]`.

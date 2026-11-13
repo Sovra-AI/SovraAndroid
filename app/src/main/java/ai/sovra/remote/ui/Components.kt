@@ -117,8 +117,9 @@ fun SButton(
         ButtonVariant.Ghost -> base.background(if (pressed) p.selection else Color.Transparent)
     }
     Box(
-        base
+        Modifier
             .alpha(if (enabled) 1f else 0.5f)
+            .then(base)
             .clickable(interaction, null, enabled = enabled, role = Role.Button, onClickLabel = hint, onClick = onClick)
             .padding(horizontal = if (compact) 12.dp else Space.medium),
         contentAlignment = Alignment.Center,

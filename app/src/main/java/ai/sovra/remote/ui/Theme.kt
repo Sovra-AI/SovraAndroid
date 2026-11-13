@@ -59,7 +59,7 @@ data class Palette(
     val codeBackground: Color,
 ) {
     /** 102° violet → indigo, the desktop's `button_primary`. */
-    val primaryGradient: Brush get() = Brush.linearGradient(listOf(Brand.violet, Brand.indigoFill))
+    val primaryGradient: Brush = Brush.horizontalGradient(listOf(Brand.violet, Brand.indigoFill))
 }
 
 val DarkPalette = Palette(
@@ -133,6 +133,17 @@ fun SovraTheme(appearance: ai.sovra.remote.data.Appearance, content: @Composable
         ai.sovra.remote.data.Appearance.Light -> false
     }
     val palette = if (dark) DarkPalette else LightPalette
+    // Status and navigation bar icons follow the app's appearance, not only the system's.
+    val view = androidx.compose.ui.platform.LocalView.current
+    if (!view.isInEditMode) {
+        androidx.compose.runtime.SideEffect {
+            val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
+            androidx.core.view.WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !dark
+                isAppearanceLightNavigationBars = !dark
+            }
+        }
+    }
     val scheme = (if (dark) darkColorScheme() else lightColorScheme()).copy(
         primary = palette.primary, onPrimary = palette.primaryForeground, background = palette.canvas, onBackground = palette.text,
         surface = palette.surface, onSurface = palette.text, error = palette.danger, outline = palette.controlBorder,

@@ -47,6 +47,15 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -91,6 +100,9 @@ fun ComputerPanel(
     var field by remember { mutableStateOf<UiElement?>(null) }
     var text by remember { mutableStateOf("") }
     val p = LocalPalette.current
+    val typing = remember { FocusRequester() }
+    // The typing bar takes the keyboard as soon as a box is chosen.
+    LaunchedEffect(field) { if (field != null) runCatching { typing.requestFocus() } }
 
     val press: (UiElement) -> Unit = { element ->
         store.launch { store.act(Intent.Click(element.ref())) }
@@ -118,14 +130,14 @@ fun ComputerPanel(
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             SText(
-                if (asList) "Everything you can press on your computer right now." else "Tap anything outlined to press it on your computer.",
+                if (asList) "Everything you can press on your computer right now." else "Tap anything outlined to press it. Pinch to zoom.",
                 Modifier.weight(1f), style = Type.caption, tone = TextTone.Secondary,
             )
             SButton(if (asList) "Show picture" else "Show as list", { asList = !asList }, compact = true, variant = ButtonVariant.Ghost)
         }
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (asList) ControlsList(snapshot, disabled, press, onScroll)
-            else Column(Modifier.verticalScroll(rememberScrollState())) { MirrorView(snapshot, screenshot, disabled, press) }
+            else ZoomBox { MirrorView(snapshot, screenshot, disabled, press) }
         }
 
         field?.let { target ->
@@ -142,7 +154,7 @@ fun ComputerPanel(
                     if (text.isEmpty()) SText("Type into “${target.label ?: "this box"}”", tone = TextTone.Muted, maxLines = 1)
                     BasicTextField(
                         text, { text = it },
-                        Modifier.fillMaxWidth().semantics { contentDescription = "Text for ${target.label ?: "the box"} on your computer" },
+                        Modifier.fillMaxWidth().focusRequester(typing).semantics { contentDescription = "Text for ${target.label ?: "the box"} on your computer" },
                         singleLine = true, textStyle = Type.body.copy(color = p.text), cursorBrush = SolidColor(p.ring),
                     )
                 }
@@ -161,6 +173,29 @@ fun ComputerPanel(
             Modifier.fillMaxWidth().heightIn(min = Layout.control).clickable(role = Role.Button) { keys = !keys },
             contentAlignment = Alignment.Center,
         ) { SText(if (keys) "Hide keyboard keys" else "Keyboard keys (Enter, Esc, arrows)", style = Type.caption, tone = TextTone.Link) }
+    }
+}
+
+/**
+ * Pinch to zoom in on small controls; drag to look around once zoomed. Taps still reach
+ * the controls inside, and one finger scrolls the page while not zoomed.
+ */
+@Composable
+private fun ZoomBox(content: @Composable () -> Unit) {
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    val zoom = rememberTransformableState { change, pan, _ ->
+        scale = (scale * change).coerceIn(1f, 4f)
+        offset = if (scale == 1f) Offset.Zero else offset + pan
+    }
+    Column(
+        Modifier
+            .fillMaxSize()
+            .clipToBounds()
+            .transformable(zoom, canPan = { scale > 1f })
+            .verticalScroll(rememberScrollState(), enabled = scale == 1f),
+    ) {
+        Box(Modifier.graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y)) { content() }
     }
 }
 

@@ -189,11 +189,20 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
         pictureWanted = wanted
     }
 
-    private suspend fun <T> run(task: suspend (RemoteClient) -> Outcome<T>): Outcome<T>? {
+    /**
+     * Runs in the store's own scope, so leaving a screen never cuts a flow off between
+     * an inspection and its input; "working" always clears.
+     */
+    private suspend fun <T> run(task: suspend (RemoteClient) -> Outcome<T>): Outcome<T>? = scope.async { runHere(task) }.await()
+
+    private suspend fun <T> runHere(task: suspend (RemoteClient) -> Outcome<T>): Outcome<T>? {
         val remote = runCatching { ensureClient() }.getOrNull() ?: return null
         _state.update { it.copy(working = true) }
-        val result = task(remote)
-        _state.update { it.copy(working = false) }
+        val result = try {
+            task(remote)
+        } finally {
+            _state.update { it.copy(working = false) }
+        }
         if (result is Outcome.Failed) {
             _state.update { it.copy(notice = Notice(if (result.code == ErrorCode.OutcomeUnknown) Tone.Warning else Tone.Danger, result.message)) }
         }
@@ -206,11 +215,16 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
     /** Run a navigation flow (open a chat, search, new chat…) and refresh afterwards. */
     suspend fun perform(task: suspend (RemoteClient) -> Outcome<*>): Boolean = run { task(it) } is Outcome.Ok
 
-    suspend fun send(text: String): Boolean {
+    suspend fun send(text: String): Boolean = scope.async { sendHere(text) }.await()
+
+    private suspend fun sendHere(text: String): Boolean {
         val remote = runCatching { ensureClient() }.getOrNull() ?: return false
         _state.update { it.copy(working = true) }
-        val (result, partial) = sendChatMessage(remote, text)
-        _state.update { it.copy(working = false) }
+        val (result, partial) = try {
+            sendChatMessage(remote, text)
+        } finally {
+            _state.update { it.copy(working = false) }
+        }
         if (result is Outcome.Failed) _state.update { it.copy(notice = Notice(if (partial) Tone.Warning else Tone.Danger, result.message)) }
         scope.launch { refresh() }
         return result is Outcome.Ok
@@ -225,8 +239,11 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
         val job = scope.async {
             val remote = runCatching { ensureClient() }.getOrNull() ?: return@async false
             _state.update { it.copy(working = true) }
-            val result = loadSkills(remote)
-            _state.update { it.copy(working = false) }
+            val result = try {
+                loadSkills(remote)
+            } finally {
+                _state.update { it.copy(working = false) }
+            }
             if (result is Outcome.Ok) _state.update { it.copy(skills = result.value) }
             launch { refresh() }
             result is Outcome.Ok

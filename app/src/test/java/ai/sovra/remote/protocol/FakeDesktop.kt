@@ -34,6 +34,17 @@ class FakeDesktop {
     val delivered = mutableListOf<Input>()
     /** Execute the next request with this action, then lose its reply. */
     var dropReplyFor: String? = null
+    /** Change the window between inspect and the next mutation this many times. */
+    var churn = 0
+    var unreachable = false
+    /** Every request received, as `op` or `control:action`. */
+    val requests = mutableListOf<String>()
+    /** Sequence numbers of control requests, in order. */
+    val sequences = mutableListOf<Int>()
+    private val connections = mutableListOf<DesktopConnection>()
+
+    /** The desktop closes idle connections; the phone must Hello again. */
+    fun closeConnections() = connections.forEach { it.close() }
     var onDeliver: ((Input) -> Unit)? = null
 
     fun element(target: String, label: String?, role: String?, y: Double = 0.0, visible: Boolean = true): UiElement {
@@ -50,7 +61,10 @@ class FakeDesktop {
 
     fun transport(): PhoneTransport = object : PhoneTransport {
         override fun deviceId() = "ab".repeat(32)
-        override suspend fun connect(address: PeerAddress): DesktopConnection = Connection()
+        override suspend fun connect(address: PeerAddress): DesktopConnection {
+            if (unreachable || address.device != DESKTOP) throw TransportFailure(TransportFailureKind.Unreachable, "offline")
+            return Connection().also { connections += it }
+        }
         override suspend fun close() = Unit
     }
 
@@ -83,9 +97,11 @@ class FakeDesktop {
         override suspend fun request(json: String): String {
             if (closed) throw TransportFailure(TransportFailureKind.Closed, "closed")
             val request = kotlinx.serialization.json.Json.parseToJsonElement(json).jsonObject
-            val reply = handle(request)
             val operation = request["operation"]!!.jsonObject
             val action = (operation["request"] as? JsonObject)?.get("action")?.jsonPrimitive?.content
+            requests += if (action != null) "control:$action" else operation["op"]!!.jsonPrimitive.content
+            if (action != null) sequences += operation["sequence"]!!.jsonPrimitive.int
+            val reply = handle(request)
             if (dropReplyFor != null && action == dropReplyFor) {
                 dropReplyFor = null
                 closed = true
@@ -137,6 +153,10 @@ class FakeDesktop {
                 }
                 "screenshot" -> buildJsonObject { put("status", "result"); put("value", buildJsonObject { put("png", "iVBORw0KGgo=") }) }
                 else -> {
+                    if (churn > 0) {
+                        churn -= 1
+                        revision += 1
+                    }
                     if ((op["revision"] as? JsonPrimitive)?.content != "r$revision") return error("stale_observation")
                     val kind = action["action"]!!.jsonPrimitive.content
                     val target = action["target"]?.jsonPrimitive?.content
