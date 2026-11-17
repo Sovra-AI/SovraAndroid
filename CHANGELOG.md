@@ -40,6 +40,7 @@ Add entries under **Unreleased** as part of the change that introduces them.
   - A button offered twice on a page or in one card (a header and an empty state) shows
     once; the same button in different cards (Edit per teammate) stays.
   - A page that starts by repeating its own name drops the repeat and any stray divider.
+  - Counts read naturally: "Web search, 1 skills" from the desktop shows as "1 skill".
 - **Scan screen:** when camera access is denied, an Open Settings button goes straight to the
   app's settings, and scanning starts by itself on return once the camera is allowed. A
   device without a camera says so and points to pasting the link.

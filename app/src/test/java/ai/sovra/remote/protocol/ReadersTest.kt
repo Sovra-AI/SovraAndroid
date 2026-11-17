@@ -127,6 +127,17 @@ class ReadersTest {
     }
 
     @Test
+    fun saysOneThingNotOneThings() {
+        assertEquals("Web search, 1 skill", tidyLabel("Web search, 1 skills"))
+        assertEquals("1 chat", tidyLabel("1 chats"))
+        assertEquals("All skills, 62 skills", tidyLabel("All skills, 62 skills"))
+        assertEquals("AI helpers, 21 skills", tidyLabel("AI helpers, 21 skills"))
+        assertEquals("1 class", tidyLabel("1 class"))
+        assertEquals("1 bus", tidyLabel("1 bus"))
+        assertEquals("Add 0.1 cups", tidyLabel("Add 0.1 cups"))
+    }
+
+    @Test
     fun listsChatsPagesAndDestinations() {
         assertEquals(listOf("Second message from the phone", "Plan the launch"), chatList(snapshot(*sidebar)).map { it.title })
         val view = snapshot(

@@ -17,6 +17,7 @@ import ai.sovra.remote.protocol.openChatPage
 import ai.sovra.remote.protocol.openPage
 import ai.sovra.remote.protocol.pages
 import ai.sovra.remote.protocol.ref
+import ai.sovra.remote.protocol.tidyLabel
 import ai.sovra.remote.protocol.typeInto
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -247,6 +248,7 @@ private fun ControlRow(
     val p = LocalPalette.current
     val shape = RoundedCornerShape(Radius.card)
     val off = element.disabled == true
+    val title = tidyLabel(title)
     Row(
         Modifier
             .fillMaxWidth()

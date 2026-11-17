@@ -273,3 +273,8 @@ fun openPage(snapshot: InspectResult): SovraPage {
     while (items.firstOrNull() is PageItem.Break) items.removeAt(0)
     return SovraPage(title, items, scroll)
 }
+
+private val ONE_PLURAL = Regex("""(^|[^\d.,])1 ([A-Za-z]{3,}[^s\W])s\b""")
+
+/** A label as the phone shows it: "Web search, 1 skills" reads "Web search, 1 skill". */
+fun tidyLabel(label: String): String = ONE_PLURAL.replace(label) { "${it.groupValues[1]}1 ${it.groupValues[2]}" }
