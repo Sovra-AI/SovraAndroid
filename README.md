@@ -46,8 +46,7 @@ A short tour runs the first time the app opens; Settings → **Show the tour aga
 Phones get a bottom tab bar; tablets and wide windows get a side rail and a readable column.
 
 The app controls the Sovra window only, not your operating system, files, or shell. It
-matches [SovraiOSNative](https://github.com/Sovra-AI/SovraiOSNative), the native iPhone and iPad
-app, screen for screen.
+matches the native iPhone and iPad app (SovraiOSNative, not yet public) screen for screen.
 
 ## Quick start
 

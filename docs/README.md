@@ -6,8 +6,8 @@ installation and the [changelog](../CHANGELOG.md) for release history.
 
 The desktop owns the phone-control protocol. Its contract is
 [SovraHarness `docs/remote-control.md`](https://github.com/Sovra-AI/SovraHarness/blob/main/docs/remote-control.md);
-the native iPhone and iPad app with the same screens is
-[SovraiOSNative](https://github.com/Sovra-AI/SovraiOSNative).
+the native iPhone and iPad app with the same screens is SovraiOSNative, which is not yet
+public.
 
 ## Start here
 
