@@ -271,8 +271,6 @@ private fun CameraScanner(onCode: (String) -> Unit) {
             future.addListener({
                 val provider = future.get()
                 val preview = Preview.Builder().build().also { it.surfaceProvider = view.surfaceProvider }
-                val reader = QRCodeReader()
-                val hints = mapOf(DecodeHintType.POSSIBLE_FORMATS to listOf(BarcodeFormat.QR_CODE), DecodeHintType.TRY_HARDER to true)
                 val analysis = ImageAnalysis.Builder()
                     .setResolutionSelector(ResolutionSelector.Builder().setResolutionStrategy(ResolutionStrategy(Size(1280, 720), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)).build())
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
@@ -281,9 +279,8 @@ private fun CameraScanner(onCode: (String) -> Unit) {
                     try {
                         val plane = image.planes[0]
                         val bytes = ByteArray(plane.buffer.remaining()).also { plane.buffer.get(it) }
-                        val source = PlanarYUVLuminanceSource(bytes, plane.rowStride, image.height, 0, 0, image.width, image.height, false)
-                        val text = runCatching { reader.decode(BinaryBitmap(HybridBinarizer(source)), hints).text }.getOrNull()
-                        if (text != null && text.startsWith("sovra://remote-control") && !found) {
+                        val text = readPairingCode(bytes, plane.rowStride, image.width, image.height)
+                        if (text != null && !found) {
                             found = true
                             ContextCompat.getMainExecutor(context).execute { onCode(text) }
                         }
@@ -298,4 +295,16 @@ private fun CameraScanner(onCode: (String) -> Unit) {
         },
         modifier = Modifier.fillMaxSize(),
     )
+}
+
+private val QR_HINTS = mapOf(DecodeHintType.POSSIBLE_FORMATS to listOf(BarcodeFormat.QR_CODE), DecodeHintType.TRY_HARDER to true)
+
+/**
+ * A Sovra pairing link from one camera frame's luminance (the Y plane, `rowStride` bytes per
+ * row), or null when the frame holds no QR code or a code that is not a Sovra pairing link.
+ */
+internal fun readPairingCode(luminance: ByteArray, rowStride: Int, width: Int, height: Int): String? {
+    val source = PlanarYUVLuminanceSource(luminance, rowStride, height, 0, 0, width, height, false)
+    val text = runCatching { QRCodeReader().decode(BinaryBitmap(HybridBinarizer(source)), QR_HINTS).text }.getOrNull()
+    return text?.takeIf { it.startsWith("sovra://remote-control") }
 }

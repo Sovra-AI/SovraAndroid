@@ -75,7 +75,8 @@ cases; none of the SovraiOS cases is left out. Keep this table current when eith
 
 Android-only: `ReadersTest.keepsEveryChatSeenInTheSidebarsOrder` (the Chats tab's merge, which
 lives in a component in SovraiOS), `ProtocolTest.pairsThenControlsWithFreshRevisions`,
-`ProtocolTest.neverReplaysInputWhoseReplyWasLost`, and the on-device
+`ProtocolTest.neverReplaysInputWhoseReplyWasLost`, `ScannerTest` (QR decoding from camera
+frames; iOS decodes with AVFoundation's own reader), and the on-device
 `OnboardingTest` (Next walks the tour, Get started and Skip finish it), which SovraiOS covers
 with `OnboardingUITest`. `ScreenGalleryTest` renders every remote screen against the
 in-memory desktop (`app/src/sharedTest/`, shared by unit and device tests) and saves PNGs; it

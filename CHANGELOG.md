@@ -43,6 +43,8 @@ Add entries under **Unreleased** as part of the change that introduces them.
 - **Scan screen:** when camera access is denied, an Open Settings button goes straight to the
   app's settings, and scanning starts by itself on return once the camera is allowed. A
   device without a camera says so and points to pasting the link.
+- `ScannerTest` reads the desktop's pairing link from camera-like frames (a padded Y plane) and
+  ignores other codes and empty frames; the scanner and the test share `readPairingCode`.
   - A page without a title no longer loses its first item (the title check matched null).
 - When the computer cannot be used (phone control off, unreachable, busy), only the card that
   explains what to do is shown: no dimmed stale screen, no tab bar, and no second red banner
