@@ -46,8 +46,9 @@ aligned with SovraHarness.
 | [CODE_OF_CONDUCT](../CODE_OF_CONDUCT.md), [LICENSE](../LICENSE), [LICENSE_EE](../LICENSE_EE.md) | Policy | SovraHarness's copies, word for word apart from the product name |
 | [AGENTS](../AGENTS.md) | Engineering rules | Code layout, Gradle tasks, `scripts/` |
 | [CHANGELOG](../CHANGELOG.md) | Release history | Commits since the last release; one Added, Changed and Fixed section each |
+| [Google Play release](play-store.md) | How-to and reference | [android-release.sh](../scripts/android-release.sh), [build.gradle.kts](../app/build.gradle.kts), the screens and labels in the listing |
 | [Development](development.md) | How-to | [build.gradle.kts](../app/build.gradle.kts), [libs.versions.toml](../gradle/libs.versions.toml), [build-rust.sh](../scripts/build-rust.sh), [ci.yml](../.github/workflows/ci.yml) |
-| [Architecture](architecture.md) | Explanation | `protocol/`, `data/`, the shared Rust transport, and their tests |
+| [Architecture](architecture.md) | Explanation | `protocol/`, `data/`, `ui/`, the shared Rust transport, and their tests |
 | [Test parity](test-parity.md) | Reference | SovraiOS's Jest tests and `app/src/test/` |
 | [Documentation index](README.md) | Index | This inventory |
 | [Pull request](../.github/pull_request_template.md) and issue templates | Contributor forms | The checks in CONTRIBUTING |

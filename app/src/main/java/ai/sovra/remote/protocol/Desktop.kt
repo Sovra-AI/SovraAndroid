@@ -168,3 +168,108 @@ fun pageFirst(snapshot: InspectResult, controls: List<UiElement>): List<UiElemen
     val (onPage, elsewhere) = rest.partition { it.bounds.x >= sidebarEnd && it.bounds.y >= WINDOW_BAR_HEIGHT }
     return onPage + elsewhere
 }
+
+private val TOGGLE_ROLES = setOf("CheckBox", "Switch", "ToggleButton", "MenuItemCheckBox")
+private val CHOICE_ROLES = setOf("Tab", "RadioButton", "MenuItemRadio")
+
+/** One thing on an open Sovra page, as the phone shows it: text, or a control in its native form. */
+sealed interface PageItem {
+    val key: String
+
+    data class Heading(override val key: String, val text: String) : PageItem
+    data class Text(override val key: String, val text: String) : PageItem
+    /** A button, link or list entry: one tap presses it on the computer. */
+    data class Action(val element: UiElement) : PageItem { override val key get() = element.target }
+    /** A checkbox or switch, shown as a phone switch. */
+    data class Toggle(val element: UiElement, val on: Boolean) : PageItem { override val key get() = element.target }
+    /** A tab or radio choice. */
+    data class Choice(val element: UiElement, val chosen: Boolean) : PageItem { override val key get() = element.target }
+    /** A text box: the phone types into it. */
+    data class Field(val element: UiElement) : PageItem { override val key get() = element.target }
+    /** Where one of the page's cards (a teammate, a model…) ends and the next begins. */
+    data class Break(override val key: String) : PageItem
+}
+
+/** The open Sovra page, rebuilt for the phone: never a picture of the window. */
+data class SovraPage(
+    /** The sidebar entry that is open ("Team"), or the page's first heading. */
+    val title: String?,
+    val items: List<PageItem>,
+    /** The page's main scrolling region, for "Show more". */
+    val scroll: UiElement?,
+)
+
+/**
+ * Read the open page: everything right of Sovra's sidebar and below its window bar, in
+ * reading order. Text inside a control is that control's label, so it is not repeated.
+ */
+fun openPage(snapshot: InspectResult): SovraPage {
+    val chat = findNavigation(snapshot, "Chat")
+    val sidebarEnd = chat?.let { it.bounds.x + it.bounds.width } ?: 0.0
+    val shortcuts = pages(snapshot)
+    val shortcutTargets = shortcuts.map { it.target }.toSet()
+    val onPage = snapshot.visible().filter {
+        it.bounds.width > 0 && it.bounds.height > 0 && it.bounds.x >= sidebarEnd &&
+            it.bounds.y >= WINDOW_BAR_HEIGHT && it.target !in shortcutTargets
+    }
+    val controls = onPage.filter { it.kind == ElementKind.Action || it.kind == ElementKind.Text }
+    // Innermost unlabelled boxes holding a control and something else to read: the page's cards
+    // (a teammate, a service…). Cards are read one by one: their text, then buttons, then
+    // switches, so a status or switch stays with what it belongs to. A button's own label inside
+    // it does not count, so a box around a single button is not a card.
+    val labelled = onPage.filter { !it.label.isNullOrBlank() && controls.none { c -> c !== it && contains(c, it) } }
+    val holders = onPage.filter { box ->
+        box.role == null && box.label.isNullOrBlank() &&
+            controls.any { box !== it && contains(box, it) } && labelled.count { box !== it && contains(box, it) } >= 2
+    }
+    val cards = holders.filter { card -> holders.none { it !== card && contains(card, it) } }
+    fun cardOf(element: UiElement) = cards.filter { it !== element && contains(it, element) }.minByOrNull { it.bounds.width * it.bounds.height }
+    val plainAction = { e: UiElement -> e.kind == ElementKind.Action && e.role !in TOGGLE_ROLES && e.role !in CHOICE_ROLES }
+    val ordered = onPage.sortedWith(
+        compareBy<UiElement>(
+            { (cardOf(it) ?: it).bounds.y }, { (cardOf(it) ?: it).bounds.x },
+            { if (cardOf(it) == null) 0 else if (it.kind == ElementKind.Content) 0 else if (plainAction(it)) 1 else 2 },
+            { it.bounds.y }, { it.bounds.x },
+        ),
+    )
+    val items = mutableListOf<PageItem>()
+    var lastText: String? = null
+    var lastCard: UiElement? = null
+    val seenActions = mutableSetOf<String>()
+    for (element in ordered) {
+        val label = element.label?.trim().orEmpty()
+        val item: PageItem? = when {
+            element.kind == ElementKind.Text -> PageItem.Field(element)
+            element.kind == ElementKind.Scroll -> null
+            label.isEmpty() -> null
+            element.role in TOGGLE_ROLES -> PageItem.Toggle(element, element.checked == true)
+            element.role in CHOICE_ROLES -> PageItem.Choice(element, element.selected == true || element.checked == true)
+            // A button already offered on the page or in the same card (a header and an empty
+            // state) is one choice; the same button in different cards (Edit per teammate) is not.
+            element.kind == ElementKind.Action -> {
+                val inCard = cardOf(element)?.target?.let { "$it|$label" }
+                if (label in seenActions || (inCard != null && inCard in seenActions)) null
+                else PageItem.Action(element).also { seenActions += inCard ?: label }
+            }
+            controls.any { it !== element && contains(it, element) } -> null
+            label == lastText -> null
+            element.role == "Heading" -> PageItem.Heading(element.target, label)
+            else -> PageItem.Text(element.target, label)
+        }
+        if (item != null) {
+            val card = cardOf(element)
+            if (card !== lastCard && items.isNotEmpty() && (card != null || lastCard != null)) items += PageItem.Break("break-${element.target}")
+            lastCard = card
+            items += item
+            lastText = (item as? PageItem.Text)?.text ?: (item as? PageItem.Heading)?.text
+        }
+    }
+    val scroll = onPage.filter { it.kind == ElementKind.Scroll }.maxByOrNull { it.bounds.width * it.bounds.height }
+    val title = shortcuts.firstOrNull { it.selected == true }?.label?.trim()
+        ?: items.firstNotNullOfOrNull { (it as? PageItem.Heading)?.text }
+    // The title is shown above the page; do not repeat it as the first heading.
+    val first = items.firstOrNull()
+    if (title != null && ((first as? PageItem.Heading)?.text == title || (first as? PageItem.Text)?.text == title)) items.removeAt(0)
+    while (items.firstOrNull() is PageItem.Break) items.removeAt(0)
+    return SovraPage(title, items, scroll)
+}

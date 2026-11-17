@@ -38,11 +38,16 @@ same Wi-Fi or over mobile data, end-to-end encrypted.
 - **Chats:** browse every chat in Sovra's sidebar, search, show older chats, or start a
   new one.
 - **Skills:** search Sovra's `/` skills; picking one starts a message with it.
-- **Computer:** jump to Sovra's pages, see a live picture of its window or a list of its
-  controls, press keyboard keys, and type into any box there.
+- **More:** every other part of Sovra (Team, Schedules, Models, Settings…) and the pages a
+  `/` command opens, such as `/help`, rebuilt as phone screens: text, buttons as rows,
+  switches as switches, and a typing bar for text boxes. No pictures of the computer.
+
+A short tour runs the first time the app opens; Settings → **Show the tour again** replays it.
+Phones get a bottom tab bar; tablets and wide windows get a side rail and a readable column.
 
 The app controls the Sovra window only, not your operating system, files, or shell. It
-matches [SovraiOS](https://github.com/Sovra-AI/SovraiOS) screen for screen.
+matches [SovraiOSNative](https://github.com/Sovra-AI/SovraiOSNative), the native iPhone and iPad
+app, screen for screen.
 
 ## Quick start
 
@@ -97,8 +102,8 @@ the [documentation](docs/README.md) for current behavior.
 - The app works only while it is open on screen. It cannot wake a closed app or a sleeping
   computer, and there are no push notifications.
 - Replies are read from the labels Sovra gives each message, so they show as text with
-  Sovra's formatting. Desktops without those labels fall back to a picture of the
-  conversation where they can capture one.
+  Sovra's formatting. Desktops without those labels fall back to the plain text inside the
+  conversation.
 
 See [Security](SECURITY.md) for reporting and the
 [desktop phone-control contract](https://github.com/Sovra-AI/SovraHarness/blob/main/docs/remote-control.md)
@@ -110,7 +115,7 @@ for the protocol.
 | --- | --- |
 | `scripts/build-rust.sh` | Build the shared Rust transport and generate the Kotlin bindings |
 | `./gradlew :app:testDebugUnitTest` | Protocol tests against the desktop fixtures; must pass before every commit |
-| `./gradlew :app:connectedDebugAndroidTest` | UI test on a device or emulator (pinch to zoom) |
+| `./gradlew :app:connectedDebugAndroidTest` | UI tests on a device or emulator (the first-run tour) |
 | `./gradlew :app:installDebug` | Debug build and install on a device or emulator |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the pull request workflow and

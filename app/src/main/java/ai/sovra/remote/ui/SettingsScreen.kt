@@ -45,7 +45,7 @@ private fun SettingRow(title: String, detail: String? = null, trailing: @Composa
 }
 
 @Composable
-fun SettingsScreen(store: RemoteStore, storage: Storage, onDone: () -> Unit, onForgotten: () -> Unit) {
+fun SettingsScreen(store: RemoteStore, storage: Storage, onDone: () -> Unit, onForgotten: () -> Unit, onTour: () -> Unit) {
     val state by store.state.collectAsState()
     val p = LocalPalette.current
     var advanced by remember { mutableStateOf(false) }
@@ -59,54 +59,58 @@ fun SettingsScreen(store: RemoteStore, storage: Storage, onDone: () -> Unit, onF
         store.stopLive()
     }
 
-    Column(
-        Modifier.fillMaxSize().background(p.canvas).safeDrawingPadding().verticalScroll(rememberScrollState()).padding(Space.medium),
-        verticalArrangement = Arrangement.spacedBy(Space.large),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SText("Settings", Modifier.weight(1f), style = Type.pageTitle)
-            SButton("Done", onDone, compact = true, variant = ButtonVariant.Ghost)
-        }
-        Card {
-            SText("Your computer", style = Type.sectionTitle)
-            val desktop = state.desktop
-            if (desktop != null) {
-                SettingRow(desktop.name, "Paired ${DateFormat.getDateInstance().format(Date(desktop.pairedAt))}")
-                SButton("Forget this computer", { confirming = true }, Modifier.fillMaxWidth(), variant = ButtonVariant.Danger)
-            } else {
-                SText("None yet.", tone = TextTone.Secondary)
+    Readable(Modifier.fillMaxSize().background(p.canvas).safeDrawingPadding()) {
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Space.medium),
+            verticalArrangement = Arrangement.spacedBy(Space.large),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.compact)) {
+                IconAction(SovraIcons.Back, "Back", onDone)
+                SText("Settings", Modifier.weight(1f), style = Type.pageTitle)
             }
-        }
-        Card {
-            SText("Appearance", style = Type.sectionTitle)
-            Segmented(listOf("System", "Dark", "Light"), preferences.appearance.ordinal, { store.setPreferences(preferences.copy(appearance = Appearance.entries[it])) })
-        }
-        SButton(if (advanced) "Hide advanced settings" else "Advanced settings", { advanced = !advanced }, Modifier.fillMaxWidth(), variant = ButtonVariant.Ghost)
-        if (advanced) {
-            val colors = SwitchDefaults.colors(checkedTrackColor = p.primary, uncheckedTrackColor = p.hover)
             Card {
-                SText("Connection", style = Type.sectionTitle)
-                SettingRow("Show screenshots", "Uses more data. Not every computer can capture its window.") {
-                    Switch(preferences.screenshots, { toggle(preferences.copy(screenshots = it)) }, colors = colors)
-                }
-                SettingRow("Same Wi-Fi only", "For testing: no relays, so mobile data will not work.") {
-                    Switch(preferences.localOnly, { toggle(preferences.copy(localOnly = it, relayOnly = preferences.relayOnly && !it)) }, colors = colors)
-                }
-                SettingRow("Developer mode", "Shows the transport's own log on the remote screen, with a button to copy it.") {
-                    Switch(preferences.developer, { store.setPreferences(preferences.copy(developer = it)) }, colors = colors)
-                }
-                SettingRow("Encrypted relay only", "For testing: skips direct connections, the way a phone on a strict network reaches your computer.") {
-                    Switch(preferences.relayOnly, { toggle(preferences.copy(relayOnly = it, localOnly = preferences.localOnly && !it)) }, colors = colors)
+                SText("Your computer", style = Type.sectionTitle)
+                val desktop = state.desktop
+                if (desktop != null) {
+                    SettingRow(desktop.name, "Paired ${DateFormat.getDateInstance().format(Date(desktop.pairedAt))}")
+                    SButton("Forget this computer", { confirming = true }, Modifier.fillMaxWidth(), variant = ButtonVariant.Danger)
+                } else {
+                    SText("None yet.", tone = TextTone.Secondary)
                 }
             }
             Card {
-                SText("This phone", style = Type.sectionTitle)
-                SettingRow("Phone key", phone?.let(::short) ?: "Created on first connection")
-                state.desktop?.let { SettingRow("Computer key", short(it.address.device)) }
-                SText(
-                    "The private key never leaves this phone. Your computer recognises the phone by this key, not by its name.",
-                    style = Type.caption, tone = TextTone.Muted,
-                )
+                SText("Appearance", style = Type.sectionTitle)
+                Segmented(listOf("System", "Dark", "Light"), preferences.appearance.ordinal, { store.setPreferences(preferences.copy(appearance = Appearance.entries[it])) })
+            }
+            Card {
+                SText("Help", style = Type.sectionTitle)
+                SText("A quick look at what the app does and how to use it.", tone = TextTone.Secondary)
+                SButton("Show the tour again", onTour, Modifier.fillMaxWidth())
+            }
+            SButton(if (advanced) "Hide advanced settings" else "Advanced settings", { advanced = !advanced }, Modifier.fillMaxWidth(), variant = ButtonVariant.Ghost)
+            if (advanced) {
+                val colors = SwitchDefaults.colors(checkedTrackColor = p.primary, uncheckedTrackColor = p.hover)
+                Card {
+                    SText("Connection", style = Type.sectionTitle)
+                    SettingRow("Same Wi-Fi only", "For testing: no relays, so mobile data will not work.") {
+                        Switch(preferences.localOnly, { toggle(preferences.copy(localOnly = it, relayOnly = preferences.relayOnly && !it)) }, colors = colors)
+                    }
+                    SettingRow("Developer mode", "Shows the transport's own log on the remote screen, with a button to copy it.") {
+                        Switch(preferences.developer, { store.setPreferences(preferences.copy(developer = it)) }, colors = colors)
+                    }
+                    SettingRow("Encrypted relay only", "For testing: skips direct connections, the way a phone on a strict network reaches your computer.") {
+                        Switch(preferences.relayOnly, { toggle(preferences.copy(relayOnly = it, localOnly = preferences.localOnly && !it)) }, colors = colors)
+                    }
+                }
+                Card {
+                    SText("This phone", style = Type.sectionTitle)
+                    SettingRow("Phone key", phone?.let(::short) ?: "Created on first connection")
+                    state.desktop?.let { SettingRow("Computer key", short(it.address.device)) }
+                    SText(
+                        "The private key never leaves this phone. Your computer recognises the phone by this key, not by its name.",
+                        style = Type.caption, tone = TextTone.Muted,
+                    )
+                }
             }
         }
     }

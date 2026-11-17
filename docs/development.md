@@ -37,8 +37,19 @@ Debug builds use the application id `ai.sovra.remote.native`; release builds use
 ./gradlew :app:connectedDebugAndroidTest      # UI test on a device or emulator
 ```
 
-Run the unit tests before every commit, and the UI test when you change the Computer tab's
-picture. The connected test installs and then uninstalls the debug app, so pair it again
+`app/src/sharedTest/` holds `FakeDesktop`, the in-memory desktop shared by the unit tests and
+the device tests. `ScreenGalleryTest` uses it to render every remote screen in light and dark
+and save PNGs for review without a paired computer. It runs only when asked:
+
+```sh
+./gradlew :app:installDebug :app:installDebugAndroidTest
+adb shell am instrument -w -e gallery true -e class ai.sovra.remote.ui.ScreenGalleryTest \
+  ai.sovra.remote.native.test/androidx.test.runner.AndroidJUnitRunner
+adb pull /sdcard/Android/data/ai.sovra.remote.native/files/gallery/
+```
+
+Run the unit tests before every commit, and the UI tests when you change the first-run
+tour. The connected test installs and then uninstalls the debug app, so pair it again
 afterwards. CI ([.github/workflows/ci.yml](../.github/workflows/ci.yml)) checks out
 SovraiOS for the shared crate, builds it, runs the unit tests and builds the debug app on
 every pull request and push to `main`. It does not run the connected test.
@@ -51,7 +62,7 @@ every pull request and push to `main`. It does not run the connected test.
 | QR scanning | CameraX and ZXing |
 | Secure storage | Android Keystore AES key encrypting the phone key in private preferences |
 | Transport | SovraiOS's Rust crate `modules/sovra-remote/rust` (Iroh 1.4.1 QUIC, same version as the desktop), bound with uniffi's Kotlin generator |
-| Tests | JUnit for the protocol and screen readers ([parity with SovraiOS](test-parity.md)); a Compose UI test on a device for pinch to zoom |
+| Tests | JUnit for the protocol and screen readers ([parity with SovraiOS](test-parity.md)); Compose UI tests on a device: the first-run tour, and a screen gallery on request |
 
 Dependency versions live in [gradle/libs.versions.toml](../gradle/libs.versions.toml).
 

@@ -1,7 +1,7 @@
 /*
  * The Chat tab: Sovra's conversation as bubbles, and a chat box that sends through the
- * real one on the computer. Typing `/` offers Sovra's skills; choosing one shows it as a
- * chip, so the message is just the words that follow.
+ * real one on the computer. The sparkle (or typing `/`) offers Sovra's skills; choosing
+ * one shows it as a chip, so the message is just the words that follow.
  */
 package ai.sovra.remote.ui
 
@@ -16,6 +16,7 @@ import ai.sovra.remote.protocol.findStop
 import ai.sovra.remote.protocol.hintPrompt
 import ai.sovra.remote.protocol.matchSkills
 import ai.sovra.remote.protocol.needsText
+import ai.sovra.remote.protocol.readableText
 import ai.sovra.remote.protocol.skillNotice
 import ai.sovra.remote.protocol.slashQuery
 import ai.sovra.remote.protocol.transcript
@@ -24,6 +25,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +34,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -69,13 +72,13 @@ private const val MAX_SUGGESTIONS = 6
 fun ChatPanel(
     store: RemoteStore,
     snapshot: InspectResult,
-    screenshot: String?,
     live: Boolean,
     chosen: Skill?,
     onChosenUsed: () -> Unit,
     onBrowseSkills: () -> Unit,
     onSkillSent: () -> Unit,
-    onOpenedPage: () -> Unit,
+    /** A `/` command opened one of Sovra's pages; the skill's title names it. */
+    onOpenedPage: (title: String?) -> Unit,
     onScroll: (UiElement, Int) -> Unit,
 ) {
     val p = LocalPalette.current
@@ -158,7 +161,8 @@ fun ChatPanel(
                     val after = store.state.value.snapshot
                     if (after != null && findComposer(after) == null) {
                         pending = null
-                        onOpenedPage()
+                        val name = text.removePrefix("/").substringBefore(' ').lowercase()
+                        onOpenedPage(state.skills?.firstOrNull { it.name == name }?.title ?: name.replaceFirstChar { it.uppercase() })
                     }
                 }
             } else {
@@ -183,15 +187,24 @@ fun ChatPanel(
                 composer == null -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(color = p.ring)
                     VSpace(Space.small)
-                    SText("Opening the chat on your computer…", tone = TextTone.Secondary)
+                    SText("Opening the chat…", tone = TextTone.Secondary)
                 }
-                chat.messages.isEmpty() && area != null -> ConversationPicture(snapshot, screenshot, area, live && !state.working, onScroll)
-                chat.messages.isEmpty() && pending == null -> Column(Modifier.fillMaxSize().padding(horizontal = Space.small), verticalArrangement = Arrangement.Center) {
-                    SText("What’s on your mind?", style = Type.pageTitle)
-                    VSpace(Space.small)
-                    SText("Ask Sovra anything. It works on your computer and the answer appears here.", tone = TextTone.Secondary)
-                    VSpace(Space.medium)
-                    SButton("Browse skills", onBrowseSkills)
+                chat.messages.isEmpty() && area != null && readableText(snapshot, area).isNotEmpty() ->
+                    ConversationText(snapshot, area, live && !state.working, onScroll)
+                // While the skills list is open it is the focus; the welcome steps aside.
+                chat.messages.isEmpty() && pending == null && query == null -> Column(
+                    Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Space.small),
+                    verticalArrangement = Arrangement.spacedBy(Space.medium, Alignment.CenterVertically),
+                ) {
+                    SText("What can Sovra do for you?", style = Type.pageTitle)
+                    SText("Ask anything. Sovra works on your computer and the answer appears here.", tone = TextTone.Secondary)
+                    val ideas = skills?.take(4).orEmpty()
+                    if (ideas.isNotEmpty()) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.small), verticalArrangement = Arrangement.spacedBy(Space.small)) {
+                            ideas.forEach { idea -> Chip(idea.title, enabled = live) { choose(idea) } }
+                        }
+                    }
+                    SButton("See all skills", onBrowseSkills, variant = ButtonVariant.Ghost, compact = true)
                 }
                 else -> LazyColumn(state = list, verticalArrangement = Arrangement.spacedBy(Space.medium), modifier = Modifier.fillMaxSize()) {
                     if (area != null && chat.earlier) {
@@ -261,28 +274,41 @@ fun ChatPanel(
                 .clip(shape)
                 .background(p.composerBackground)
                 .border(if (focused) 1.5.dp else 1.dp, if (focused) p.composerFocusBorder else p.composerBorder, shape)
-                .padding(Space.small),
-            verticalArrangement = Arrangement.spacedBy(Space.small),
+                .padding(Space.compact),
+            verticalArrangement = Arrangement.spacedBy(Space.compact),
         ) {
             current?.let { chip ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.small)) {
+                Row(Modifier.padding(start = Space.small, top = Space.compact), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.small)) {
                     Row(
                         Modifier
                             .clip(RoundedCornerShape(999.dp))
                             .background(p.selection)
                             .clickable(role = Role.Button, onClickLabel = "Remove ${chip.title}") { skill = null }
                             .padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Space.snug),
                     ) {
+                        SIcon(SovraIcons.Skills, null, tint = p.link, size = 14.dp)
                         SText(chip.title, style = Type.label, tone = TextTone.Link)
-                        SText("✕", style = Type.label, tone = TextTone.Secondary)
+                        SIcon(SovraIcons.Close, null, tint = p.secondaryText, size = 14.dp)
                     }
                     SText(chip.description, Modifier.weight(1f), style = Type.caption, tone = TextTone.Muted, maxLines = 1)
                 }
             }
-            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Space.small)) {
-                Box(Modifier.weight(1f).heightIn(min = Layout.control).padding(horizontal = 4.dp), contentAlignment = Alignment.CenterStart) {
-                    val placeholder = current?.hintPrompt() ?: "Message Sovra  ·  type / for skills"
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Space.compact)) {
+                IconAction(
+                    SovraIcons.Skills, "Use a skill",
+                    {
+                        if (query != null) draft = "" else {
+                            skill = null
+                            draft = "/"
+                        }
+                        runCatching { focus.requestFocus() }
+                    },
+                    enabled = live, tint = if (query != null) p.link else p.secondaryText,
+                )
+                Box(Modifier.weight(1f).heightIn(min = Layout.control).padding(vertical = 10.dp), contentAlignment = Alignment.CenterStart) {
+                    val placeholder = current?.hintPrompt() ?: "Message Sovra"
                     if (draft.isEmpty()) SText(placeholder, tone = TextTone.Muted, maxLines = 1)
                     BasicTextField(
                         draft, { draft = it },
@@ -298,27 +324,55 @@ fun ChatPanel(
                     )
                 }
                 if (stop != null) {
-                    Box(
-                        Modifier
-                            .heightIn(min = Layout.control)
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(p.stopBackground)
-                            .clickable(role = Role.Button, onClickLabel = "Stop what Sovra is doing") { store.launch { store.stop() } }
-                            .padding(horizontal = Space.medium),
-                        contentAlignment = Alignment.Center,
-                    ) { SText("Stop", style = Type.label.copy(color = p.primaryForeground)) }
+                    IconAction(SovraIcons.Stop, "Stop what Sovra is doing", { store.launch { store.stop() } }, background = p.stopBackground, tint = p.primaryForeground)
                 } else {
-                    Box(
-                        Modifier
-                            .heightIn(min = Layout.control)
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(if (canSend) p.sendReadyBackground else p.hover)
-                            .clickable(enabled = canSend, role = Role.Button, onClickLabel = "Send") { send() }
-                            .padding(horizontal = Space.medium),
-                        contentAlignment = Alignment.Center,
-                    ) { SText("Send", style = Type.label.copy(color = if (canSend) p.sendReadyForeground else p.mutedText)) }
+                    IconAction(
+                        SovraIcons.Send, "Send", { send() }, enabled = canSend,
+                        background = if (canSend) p.sendReadyBackground else p.hover,
+                        tint = if (canSend) p.sendReadyForeground else p.mutedText,
+                    )
                 }
             }
+        }
+    }
+}
+
+/** A small rounded suggestion. */
+@Composable
+private fun Chip(label: String, enabled: Boolean, onClick: () -> Unit) {
+    val p = LocalPalette.current
+    val shape = RoundedCornerShape(999.dp)
+    Row(
+        Modifier
+            .heightIn(min = Layout.compactControl)
+            .clip(shape)
+            .background(p.surface)
+            .border(1.dp, p.border, shape)
+            .alpha(if (enabled) 1f else 0.5f)
+            .clickable(enabled = enabled, role = Role.Button, onClickLabel = "Use $label", onClick = onClick)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Space.snug),
+    ) {
+        SIcon(SovraIcons.Skills, null, tint = p.link, size = 16.dp)
+        SText(label, style = Type.label)
+    }
+}
+
+/**
+ * The conversation for desktops that do not label messages: the readable text inside it,
+ * with buttons to read earlier or later parts.
+ */
+@Composable
+private fun ConversationText(snapshot: InspectResult, area: UiElement, enabled: Boolean, onScroll: (UiElement, Int) -> Unit) {
+    val lines = remember(snapshot) { readableText(snapshot, area) }
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Space.small)) {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            lines.forEach { SText(it.label ?: "") }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.small)) {
+            SButton("Earlier", { onScroll(area, 8) }, Modifier.weight(1f), compact = true, variant = ButtonVariant.Ghost, enabled = enabled)
+            SButton("Later", { onScroll(area, -8) }, Modifier.weight(1f), compact = true, variant = ButtonVariant.Ghost, enabled = enabled)
         }
     }
 }
@@ -326,10 +380,10 @@ fun ChatPanel(
 @Composable
 private fun Bubble(text: String, sending: Boolean = false) {
     val p = LocalPalette.current
-    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+    BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
         Box(
             Modifier
-                .widthIn(max = 300.dp)
+                .widthIn(max = maxWidth * 0.82f)
                 .alpha(if (sending) 0.6f else 1f)
                 .clip(RoundedCornerShape(topStart = Radius.panel, topEnd = Radius.panel, bottomStart = Radius.panel, bottomEnd = Radius.small))
                 .background(p.userBubble)

@@ -110,11 +110,35 @@ the computer. A reconnect that finishes within 1.5 s shows only "Connecting…" 
 line, so coming back to the app does not flash the card. Pairing shows a ticking elapsed time.
 The wording lives in one pure function (`data/ConnectionStatus.kt`), with the same tests in both apps.
 
+## Showing Sovra's pages on a phone
+
+The phone never shows a picture of the computer. Every screen is rebuilt from the desktop's
+Inspect snapshot: each element's label, role, state and bounds.
+
+- **Chat** reads the conversation's labelled messages and sends through Sovra's own chat box.
+  Typing `/` offers the skills read from Sovra's `/` menu.
+- **Chats** and **Skills** list Sovra's sidebar chats and its `/` skills.
+- **More** lists Sovra's sidebar pages. Whatever page is open there, or one a `/` command
+  opened (such as `/help`), is read by `openPage` (`protocol/Desktop.kt`) into phone items in reading order:
+  headings and text, buttons as rows, switches, tabs and choices, and text boxes that get a
+  typing bar.
+  - Unlabelled boxes that hold a control and something else to read are cards (a teammate,
+    a service). A card is read as one group, its text, then buttons, then switches, with a
+    divider between cards.
+  - Text inside a control is that control's label and is not repeated. A button offered
+    twice on the page or in one card shows once. A page's first heading or text that repeats
+    its name is dropped; a page that does not name itself takes the name of what was opened.
+
+Phones get a bottom tab bar (Chat, Chats, Skills, More) that steps aside while typing. Wider
+windows get a side rail, and content keeps a readable width of at most 640 dp. A
+four-page tour runs on first launch, once more after pairing from a link on a fresh install,
+and again from Settings or the Pair screen.
+
 ## Tests
 
 `app/src/test/` holds JUnit tests for the protocol. `ProtocolTest` checks the wire format
 byte-for-byte against fixtures copied from the desktop into
 `app/src/test/resources/fixtures/`, and `FakeDesktop` is an in-memory desktop for client and
 screen-reader tests. Every SovraiOS test has a counterpart here; [test-parity.md](test-parity.md)
-maps them. `app/src/androidTest/` holds Compose UI tests that need a device, such as pinch to
-zoom on the Computer tab's picture.
+maps them. `app/src/androidTest/` holds Compose UI tests that need a device, such as the first-run
+tour.

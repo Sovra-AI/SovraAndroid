@@ -55,7 +55,6 @@ fun ChatsView(
     snapshot: InspectResult,
     disabled: Boolean,
     onOpen: (String) -> Unit,
-    onNew: () -> Unit,
     onSearch: (String) -> Unit,
     onMore: () -> Unit,
 ) {
@@ -81,20 +80,17 @@ fun ChatsView(
 
     val shown = if (searching) current else titles
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Space.small)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Space.small), verticalAlignment = Alignment.CenterVertically) {
-            SearchBox(query, { query = it }, "Search your chats", Modifier.weight(1f))
-            SButton("New chat", onNew, variant = ButtonVariant.Primary, enabled = !disabled, hint = "Start a fresh conversation")
-        }
+        SearchBox(query, { query = it }, "Search your chats", Modifier.fillMaxWidth())
         LazyColumn(verticalArrangement = Arrangement.spacedBy(Space.small)) {
             if (shown.isEmpty()) {
                 item {
                     SText(
-                        if (searching) "No chats match “${query.trim()}”." else "No chats yet. Tap New chat to start one.",
+                        if (searching) "No chats match “${query.trim()}”." else "No chats yet. Tap the pencil at the top to start one.",
                         Modifier.padding(Space.small), tone = TextTone.Secondary,
                     )
                 }
             }
-            items(shown, key = { it }) { title -> ListRow(title, enabled = !disabled, hint = "Open this chat") { onOpen(title) } }
+            items(shown, key = { it }) { title -> ListRow(title, enabled = !disabled, hint = "Open this chat", icon = SovraIcons.Chat) { onOpen(title) } }
             if (!searching && titles.isNotEmpty()) {
                 item { SButton("Show older chats", onMore, Modifier.fillMaxWidth(), variant = ButtonVariant.Ghost, enabled = !disabled) }
             }
@@ -120,13 +116,13 @@ fun SkillsView(skills: List<Skill>?, disabled: Boolean, onUse: (Skill) -> Unit, 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(Space.small)) {
             item {
                 SText(
-                    "Pick a skill, then say what you need. You can also type / in the chat.",
+                    "Pick a skill, then say what you need.",
                     Modifier.padding(horizontal = Space.compact), style = Type.caption, tone = TextTone.Secondary,
                 )
             }
             if (shown.isEmpty()) item { SText("No skills match “${query.trim()}”.", Modifier.padding(Space.small), tone = TextTone.Secondary) }
             items(shown, key = { it.name }) { skill ->
-                ListRow(skill.title, skill.description, enabled = !disabled, hint = "Start a message with this skill") { onUse(skill) }
+                ListRow(skill.title, skill.description, enabled = !disabled, hint = "Start a message with this skill", icon = SovraIcons.Skills) { onUse(skill) }
             }
         }
     }

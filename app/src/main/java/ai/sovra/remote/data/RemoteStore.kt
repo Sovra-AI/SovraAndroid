@@ -42,7 +42,6 @@ data class RemoteState(
     val phase: Phase = Phase.Loading,
     val desktop: SavedDesktop? = null,
     val snapshot: InspectResult? = null,
-    val screenshot: String? = null,
     val updatedAt: Long = 0,
     /** Last desktop message for the current phase, shown verbatim (never parsed). */
     val detail: String? = null,
@@ -80,7 +79,6 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
     private var client: RemoteClient? = null
     private var timer: Job? = null
     private var live = false
-    private var pictureWanted = false
     private var fetchingSkills: Deferred<Boolean>? = null
     private val backoff = Backoff()
 
@@ -181,13 +179,9 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
         when (val view = remote.inspect()) {
             is Outcome.Ok -> {
                 backoff.reset()
-                // Never keep an old picture around: it would show a screen that is no longer there.
-                val screenshot = if (pictureWanted || _state.value.preferences.screenshots) {
-                    (remote.screenshot() as? Outcome.Ok)?.value
-                } else null
                 _state.update {
                     it.copy(
-                        phase = Phase.Connected, snapshot = view.value, screenshot = screenshot, updatedAt = System.currentTimeMillis(),
+                        phase = Phase.Connected, snapshot = view.value, updatedAt = System.currentTimeMillis(),
                         detail = null, progress = null, route = remote.route,
                     )
                 }
@@ -236,11 +230,6 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
         _state.update { it.copy(progress = null, route = null) }
     }
 
-    /** The Computer tab (and the Chat tab without labelled messages) needs screenshots. */
-    fun setPictureWanted(wanted: Boolean) {
-        pictureWanted = wanted
-    }
-
     /**
      * Runs in the store's own scope, so leaving a screen never cuts a flow off between
      * an inspection and its input; "working" always clears.
@@ -255,7 +244,8 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
         } finally {
             _state.update { it.copy(working = false) }
         }
-        if (result is Outcome.Failed) {
+        // Connection-level failures (phone control off, unreachable…) get their own card after the refresh.
+        if (result is Outcome.Failed && phaseFor(result.code) == Phase.Connected) {
             _state.update { it.copy(notice = Notice(if (result.code == ErrorCode.OutcomeUnknown) Tone.Warning else Tone.Danger, result.message)) }
         }
         scope.launch { refresh() }
@@ -277,7 +267,7 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
         } finally {
             _state.update { it.copy(working = false) }
         }
-        if (result is Outcome.Failed) _state.update { it.copy(notice = Notice(if (partial) Tone.Warning else Tone.Danger, result.message)) }
+        if (result is Outcome.Failed && phaseFor(result.code) == Phase.Connected) _state.update { it.copy(notice = Notice(if (partial) Tone.Warning else Tone.Danger, result.message)) }
         scope.launch { refresh() }
         return result is Outcome.Ok
     }
@@ -313,11 +303,19 @@ class RemoteStore(private val storage: Storage, private val factory: TransportFa
         storage.deleteDesktop()
         _state.update {
             it.copy(
-                desktop = null, phase = Phase.Unpaired, snapshot = null, screenshot = null, detail = null, skills = null,
+                desktop = null, phase = Phase.Unpaired, snapshot = null, detail = null, skills = null,
                 notice = Notice(Tone.Info, "Forgotten on this phone. Also choose Forget on your computer to revoke access there."),
             )
         }
     }
+
+    /** The first-run tour has been seen (or the phone was already paired). */
+    val onboarded: Boolean get() = storage.loadOnboarded() || _state.value.desktop != null
+
+    fun setOnboarded() = storage.saveOnboarded()
+
+    /** The tour itself was seen (pairing from a link on a fresh install skips past it). */
+    val tourSeen: Boolean get() = storage.loadOnboarded()
 
     fun setPreferences(preferences: Preferences) {
         storage.savePreferences(preferences)

@@ -3,6 +3,7 @@ package ai.sovra.remote
 import ai.sovra.remote.data.RemoteStore
 import ai.sovra.remote.data.Storage
 import ai.sovra.remote.data.createNativeTransport
+import ai.sovra.remote.ui.OnboardingScreen
 import ai.sovra.remote.ui.PairScreen
 import ai.sovra.remote.ui.PairingLink
 import ai.sovra.remote.ui.PairingNames
@@ -30,6 +31,8 @@ class SovraApp : Application() {
 }
 
 private sealed interface Screen {
+    /** The first-run tour; `back` is where it returns to (null: home). */
+    class Tour(val back: Screen?) : Screen
     data object Pair : Screen
     data object Scan : Screen
     /** A pairing link from the camera or a deep link: used once, in memory, never saved. */
@@ -46,23 +49,48 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val app = application as SovraApp
-        screen = if (app.store.state.value.desktop != null) Screen.Remote else Screen.Pair
+        screen = when {
+            !app.store.onboarded -> Screen.Tour(null)
+            app.store.state.value.desktop != null -> Screen.Remote
+            else -> Screen.Pair
+        }
         takeLink(intent)
         setContent {
             val state by app.store.state.collectAsState()
             SovraTheme(state.preferences.appearance) {
                 val home: () -> Unit = { screen = if (app.store.state.value.desktop != null) Screen.Remote else Screen.Pair }
                 when (val current = screen) {
-                    Screen.Pair -> PairScreen(app.store, app.names, onScan = { screen = Screen.Scan }, onPaired = { screen = Screen.Remote })
+                    is Screen.Tour -> {
+                        val done: () -> Unit = {
+                            app.store.setOnboarded()
+                            val back = current.back
+                            if (back != null) screen = back else home()
+                        }
+                        BackHandler(enabled = current.back != null, onBack = done)
+                        OnboardingScreen(done)
+                    }
+                    Screen.Pair -> PairScreen(
+                        app.store, app.names,
+                        onScan = { screen = Screen.Scan }, onPaired = { screen = Screen.Remote }, onTour = { screen = Screen.Tour(Screen.Pair) },
+                    )
                     Screen.Scan -> {
                         BackHandler { screen = Screen.Pair }
                         ScanScreen(onCode = { screen = Screen.Link(it) }, onCancel = { screen = Screen.Pair })
                     }
-                    is Screen.Link -> PairingLink(app.store, app.names, current.link) { paired -> screen = if (paired) Screen.Remote else Screen.Pair }
+                    is Screen.Link -> PairingLink(app.store, app.names, current.link) { paired ->
+                        // Paired straight from a link on a fresh install: show the tour once, then the chat.
+                        screen = when {
+                            !paired -> Screen.Pair
+                            !app.store.tourSeen -> Screen.Tour(Screen.Remote)
+                            else -> Screen.Remote
+                        }
+                    }
                     Screen.Remote -> RemoteScreen(app.store, onSettings = { screen = Screen.Settings }, onUnpaired = { screen = Screen.Pair })
                     Screen.Settings -> {
                         BackHandler(onBack = home)
-                        SettingsScreen(app.store, app.storage, onDone = home, onForgotten = { screen = Screen.Pair })
+                        SettingsScreen(
+                            app.store, app.storage, onDone = home, onForgotten = { screen = Screen.Pair }, onTour = { screen = Screen.Tour(Screen.Settings) },
+                        )
                     }
                 }
             }

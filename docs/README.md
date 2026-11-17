@@ -6,7 +6,8 @@ installation and the [changelog](../CHANGELOG.md) for release history.
 
 The desktop owns the phone-control protocol. Its contract is
 [SovraHarness `docs/remote-control.md`](https://github.com/Sovra-AI/SovraHarness/blob/main/docs/remote-control.md);
-the iPhone app with the same screens is [SovraiOS](https://github.com/Sovra-AI/SovraiOS).
+the native iPhone and iPad app with the same screens is
+[SovraiOSNative](https://github.com/Sovra-AI/SovraiOSNative).
 
 ## Start here
 
@@ -17,6 +18,7 @@ the iPhone app with the same screens is [SovraiOS](https://github.com/Sovra-AI/S
 
 - [Contributing](../CONTRIBUTING.md): issues, branches, pull requests, and required checks.
 - [Development](development.md): the Rust transport, Gradle builds, and generated files.
+- [Google Play release](play-store.md): the signed bundle, the upload key, and the Play Console steps.
 - [Test parity](test-parity.md): each SovraiOS test and the Android test that covers it.
 - [Documentation maintenance](documentation.md): writing and checking these guides.
 

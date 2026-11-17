@@ -107,7 +107,7 @@ private fun NameField(label: String, value: String, onChange: (String) -> Unit, 
 }
 
 @Composable
-fun PairScreen(store: RemoteStore, names: PairingNames, onScan: () -> Unit, onPaired: () -> Unit) {
+fun PairScreen(store: RemoteStore, names: PairingNames, onScan: () -> Unit, onPaired: () -> Unit, onTour: () -> Unit) {
     val state by store.state.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -133,46 +133,49 @@ fun PairScreen(store: RemoteStore, names: PairingNames, onScan: () -> Unit, onPa
         }
     }
 
-    Column(
-        Modifier.fillMaxSize().background(LocalPalette.current.canvas).safeDrawingPadding().verticalScroll(rememberScrollState()).padding(Space.large),
-        verticalArrangement = Arrangement.spacedBy(Space.large),
-    ) {
-        Column(Modifier.fillMaxWidth().padding(top = Space.extra), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Space.medium)) {
-            Logo(72.dp)
-            SText("Use Sovra from your phone", style = Type.pageTitle.copy(textAlign = TextAlign.Center))
-            SText(
-                "Pair once. After that, opening this app connects to your computer by itself — on Wi-Fi or mobile data.",
-                style = Type.body.copy(textAlign = TextAlign.Center), tone = TextTone.Secondary,
-            )
-        }
-        if (state.phase == Phase.Revoked) NoticeBanner(ai.sovra.remote.data.Tone.Warning, state.detail ?: "Your computer no longer recognises this phone. Pair again.")
-        state.notice?.let { NoticeBanner(it.tone, it.text) { store.setNotice(null) } }
-        Card {
-            STEPS.forEachIndexed { index, step ->
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(Modifier.size(24.dp).clip(CircleShape).background(LocalPalette.current.selection), contentAlignment = Alignment.Center) {
-                        SText("${index + 1}", style = Type.caption, tone = TextTone.Link)
+    Readable(Modifier.fillMaxSize().background(LocalPalette.current.canvas).safeDrawingPadding()) {
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Space.large),
+            verticalArrangement = Arrangement.spacedBy(Space.large),
+        ) {
+            Column(Modifier.fillMaxWidth().padding(top = Space.extra), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Space.medium)) {
+                Logo(72.dp)
+                SText("Use Sovra from your phone", style = Type.pageTitle.copy(textAlign = TextAlign.Center))
+                SText(
+                    "Pair once. After that, opening this app connects to your computer by itself — on Wi-Fi or mobile data.",
+                    style = Type.body.copy(textAlign = TextAlign.Center), tone = TextTone.Secondary,
+                )
+            }
+            if (state.phase == Phase.Revoked) NoticeBanner(ai.sovra.remote.data.Tone.Warning, state.detail ?: "Your computer no longer recognises this phone. Pair again.")
+            state.notice?.let { NoticeBanner(it.tone, it.text) { store.setNotice(null) } }
+            Card {
+                STEPS.forEachIndexed { index, step ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Box(Modifier.size(24.dp).clip(CircleShape).background(LocalPalette.current.selection), contentAlignment = Alignment.Center) {
+                            SText("${index + 1}", style = Type.caption, tone = TextTone.Link)
+                        }
+                        SText(step, Modifier.weight(1f))
                     }
-                    SText(step, Modifier.weight(1f))
                 }
             }
+            error?.let { NoticeBanner(ai.sovra.remote.data.Tone.Danger, it) }
+            pairingStatusText(busy)?.let { NoticeBanner(ai.sovra.remote.data.Tone.Info, it) }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SButton("Scan the code", onScan, Modifier.fillMaxWidth(), variant = ButtonVariant.Primary, enabled = !busy)
+                SButton(if (busy) "Pairing…" else "Paste a pairing link instead", pasteLink, Modifier.fillMaxWidth(), variant = ButtonVariant.Ghost, enabled = !busy)
+            }
+            if (naming) {
+                NameField("This phone's name", names.phoneName, { names.phoneName = it }, "Shown on your computer so you can recognise and forget it.")
+                NameField("Your computer's name", names.desktopName, { names.desktopName = it })
+            } else {
+                SButton("Change names (optional)", { naming = true }, Modifier.fillMaxWidth(), variant = ButtonVariant.Ghost, compact = true)
+            }
+            SButton("How does this work?", onTour, Modifier.fillMaxWidth(), variant = ButtonVariant.Ghost, compact = true)
+            SText(
+                "Private and encrypted from end to end. Works on Wi-Fi or mobile data while your computer is awake and Sovra is open.",
+                style = Type.caption.copy(textAlign = TextAlign.Center), tone = TextTone.Muted, modifier = Modifier.fillMaxWidth(),
+            )
         }
-        error?.let { NoticeBanner(ai.sovra.remote.data.Tone.Danger, it) }
-        pairingStatusText(busy)?.let { NoticeBanner(ai.sovra.remote.data.Tone.Info, it) }
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SButton("Scan the code", onScan, Modifier.fillMaxWidth(), variant = ButtonVariant.Primary, enabled = !busy)
-            SButton(if (busy) "Pairing…" else "Paste a pairing link instead", pasteLink, Modifier.fillMaxWidth(), variant = ButtonVariant.Ghost, enabled = !busy)
-        }
-        if (naming) {
-            NameField("This phone's name", names.phoneName, { names.phoneName = it }, "Shown on your computer so you can recognise and forget it.")
-            NameField("Your computer's name", names.desktopName, { names.desktopName = it })
-        } else {
-            SButton("Change names (optional)", { naming = true }, Modifier.fillMaxWidth(), variant = ButtonVariant.Ghost, compact = true)
-        }
-        SText(
-            "Private and encrypted from end to end. Works on Wi-Fi or mobile data while your computer is awake and Sovra is open.",
-            style = Type.caption.copy(textAlign = TextAlign.Center), tone = TextTone.Muted, modifier = Modifier.fillMaxWidth(),
-        )
     }
 }
 
@@ -212,24 +215,45 @@ fun ScanScreen(onCode: (String) -> Unit, onCancel: () -> Unit) {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
     }
     var asked by remember { mutableStateOf(false) }
+    val p = LocalPalette.current
+    val hasCamera = remember { context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY) }
     val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         allowed = it
         asked = true
     }
-    LaunchedEffect(Unit) { if (!allowed) request.launch(Manifest.permission.CAMERA) }
+    LaunchedEffect(Unit) { if (hasCamera && !allowed) request.launch(Manifest.permission.CAMERA) }
+    // Back from Settings with the camera allowed: start scanning without another tap.
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+        allowed = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+    }
 
-    Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black)) {
-        if (allowed) CameraScanner(onCode)
+    Box(Modifier.fillMaxSize().background(p.scannerBackground)) {
+        if (hasCamera && allowed) CameraScanner(onCode)
         Column(
             Modifier.fillMaxSize().safeDrawingPadding().padding(Space.large),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             SText(
-                if (allowed) "Point your camera at the code on your computer." else if (asked) "Sovra needs the camera to scan the code. Allow it in Settings, or paste the link instead." else "",
-                style = Type.sectionTitle.copy(color = androidx.compose.ui.graphics.Color.White, textAlign = TextAlign.Center),
+                when {
+                    !hasCamera -> "This device has no camera. Go back and paste the pairing link instead."
+                    allowed -> "Point your camera at the code on your computer."
+                    asked -> "Sovra needs the camera to scan the code. Allow it in Settings, or paste the link instead."
+                    else -> ""
+                },
+                style = Type.sectionTitle.copy(color = p.scannerText, textAlign = TextAlign.Center),
                 modifier = Modifier.fillMaxWidth(),
             )
-            SButton("Cancel", onCancel, Modifier.fillMaxWidth())
+            Column(verticalArrangement = Arrangement.spacedBy(Space.small)) {
+                // One tap to the setting the message asks for.
+                if (hasCamera && asked && !allowed) {
+                    SButton("Open Settings", {
+                        context.startActivity(
+                            android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", context.packageName, null)),
+                        )
+                    }, Modifier.fillMaxWidth(), variant = ButtonVariant.Primary)
+                }
+                SButton("Cancel", onCancel, Modifier.fillMaxWidth())
+            }
         }
     }
 }

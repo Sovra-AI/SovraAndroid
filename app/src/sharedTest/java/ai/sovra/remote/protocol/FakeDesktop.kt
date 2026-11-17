@@ -79,6 +79,8 @@ class FakeDesktop {
         element.role?.let { put("role", it) }
         put("visible", element.visible)
         put("disabled", element.disabled)
+        element.checked?.let { put("checked", it) }
+        element.selected?.let { put("selected", it) }
         put("bounds", buildJsonObject {
             put("x", element.bounds.x); put("y", element.bounds.y); put("width", element.bounds.width); put("height", element.bounds.height)
         })

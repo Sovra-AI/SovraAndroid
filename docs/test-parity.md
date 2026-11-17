@@ -76,7 +76,11 @@ cases; none of the SovraiOS cases is left out. Keep this table current when eith
 Android-only: `ReadersTest.keepsEveryChatSeenInTheSidebarsOrder` (the Chats tab's merge, which
 lives in a component in SovraiOS), `ProtocolTest.pairsThenControlsWithFreshRevisions`,
 `ProtocolTest.neverReplaysInputWhoseReplyWasLost`, and the on-device
-`ZoomBoxTest.pinchZoomsInAndTapsStillReachTheControls`.
+`OnboardingTest` (Next walks the tour, Get started and Skip finish it), which SovraiOS covers
+with `OnboardingUITest`. `ScreenGalleryTest` renders every remote screen against the
+in-memory desktop (`app/src/sharedTest/`, shared by unit and device tests) and saves PNGs; it
+runs only with `adb shell am instrument -w -e gallery true …` and writes to
+`/sdcard/Android/data/ai.sovra.remote.native/files/gallery/`.
 
 SovraiOS-only: the two store tests in `src/state/__tests__/remote.test.ts` (failed tries are
 counted and the route is reported; "Try now" never starts a second try). `RemoteStore` here

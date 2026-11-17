@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -180,7 +181,9 @@ fun SearchBox(value: String, onChange: (String) -> Unit, placeholder: String, mo
             .border(1.dp, p.controlBorder, shape)
             .padding(start = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Space.small),
     ) {
+        SIcon(SovraIcons.Search, null, tint = p.mutedText, size = 18.dp)
         Box(Modifier.weight(1f)) {
             if (value.isEmpty()) SText(placeholder, tone = TextTone.Muted, maxLines = 1)
             BasicTextField(
@@ -197,22 +200,30 @@ fun SearchBox(value: String, onChange: (String) -> Unit, placeholder: String, mo
             Box(
                 Modifier.size(44.dp).clickable(onClickLabel = "Clear search", role = Role.Button) { onChange("") },
                 contentAlignment = Alignment.Center,
-            ) { SText("✕", tone = TextTone.Secondary) }
+            ) { SIcon(SovraIcons.Close, null, tint = p.secondaryText, size = 18.dp) }
         } else {
             Box(Modifier.width(12.dp))
         }
     }
 }
 
-/** A tappable list row with a title, optional subtitle and a chevron. */
+/** A tappable list row with an optional icon, a title, optional subtitle and a chevron. */
 @Composable
-fun ListRow(title: String, subtitle: String? = null, enabled: Boolean = true, hint: String? = null, onClick: () -> Unit) {
+fun ListRow(
+    title: String,
+    subtitle: String? = null,
+    enabled: Boolean = true,
+    hint: String? = null,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    chevron: Boolean = true,
+    onClick: () -> Unit,
+) {
     val p = LocalPalette.current
     val shape = RoundedCornerShape(Radius.card)
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = Layout.control + 8.dp)
+            .heightIn(min = Layout.control + 12.dp)
             .clip(shape)
             .background(p.surface)
             .border(1.dp, p.border, shape)
@@ -220,13 +231,18 @@ fun ListRow(title: String, subtitle: String? = null, enabled: Boolean = true, hi
             .clickable(enabled = enabled, role = Role.Button, onClickLabel = hint, onClick = onClick)
             .padding(horizontal = Space.medium, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Space.small),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (icon != null) {
+            Box(Modifier.size(36.dp).clip(CircleShape).background(p.selection), contentAlignment = Alignment.Center) {
+                SIcon(icon, null, tint = p.link, size = 20.dp)
+            }
+        }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             SText(title, style = Type.label, maxLines = 2)
             if (!subtitle.isNullOrBlank()) SText(subtitle, style = Type.caption, tone = TextTone.Secondary, maxLines = 2)
         }
-        SText("›", tone = TextTone.Muted)
+        if (chevron) SIcon(SovraIcons.Chevron, null, tint = p.mutedText, size = 18.dp)
     }
 }
 
@@ -324,4 +340,40 @@ fun Logo(size: androidx.compose.ui.unit.Dp) {
         "Sovra",
         Modifier.size(size).clip(CircleShape).background(LocalPalette.current.dark.let { androidx.compose.ui.graphics.Color(0xFF111216) }),
     )
+}
+
+/** A tablet, foldable or landscape phone: wide enough for a side rail. */
+@Composable
+fun isWide(): Boolean = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= Layout.WIDE
+
+/** Keeps content at a comfortable reading width, centred, on any screen. */
+@Composable
+fun Readable(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+        Box(Modifier.widthIn(max = Layout.readable).fillMaxWidth()) { content() }
+    }
+}
+
+/** A round icon-only button with a full 44 dp touch target and a spoken label. */
+@Composable
+fun IconAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    background: Color = Color.Transparent,
+    tint: Color = LocalPalette.current.text,
+    size: androidx.compose.ui.unit.Dp = Layout.control,
+) {
+    Box(
+        modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(background)
+            .alpha(if (enabled) 1f else 0.4f)
+            .clickable(enabled = enabled, role = Role.Button, onClickLabel = label, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) { SIcon(icon, null, tint = tint, size = size * 0.5f) }
 }

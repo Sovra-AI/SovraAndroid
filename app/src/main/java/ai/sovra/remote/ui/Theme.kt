@@ -60,6 +60,10 @@ data class Palette(
 ) {
     /** 102° violet → indigo, the desktop's `button_primary`. */
     val primaryGradient: Brush = Brush.horizontalGradient(listOf(Brand.violet, Brand.indigoFill))
+
+    /** The camera screen is always dark, whatever the appearance. */
+    val scannerBackground: Color get() = Color.Black
+    val scannerText: Color get() = Color.White
 }
 
 val DarkPalette = Palette(
@@ -111,6 +115,10 @@ object Layout {
     /** Minimum touch target (desktop uses 36 px). */
     val control = 44.dp
     val compactControl = 36.dp
+    /** Widest a column of text and controls grows on tablets, foldables and landscape. */
+    val readable = 640.dp
+    /** From this width (dp) the tabs move to a side rail. */
+    const val WIDE = 600
 }
 
 /** Desktop roles: 36 welcome, 28 page title, 16 section title, body, 12 caption. */
