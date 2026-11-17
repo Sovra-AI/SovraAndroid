@@ -10,6 +10,10 @@ Add entries under **Unreleased** as part of the change that introduces them.
 
 ### Added
 
+- **Play Store bundle.** `scripts/android-release.sh` builds both shipped ABIs, runs the unit
+  tests and writes a release AAB signed with the upload key from the Keychain. Without that
+  key, release builds stay debug-signed for local installs. See [Google Play release](docs/play-store.md).
+
 - **Transport log.** Developer mode (Advanced settings) shows iroh's own log of relay dials,
   TLS results and lookups, kept in memory only, with Copy details; failed pairings and retries
   offer Show technical details without it. The shared transport also dials through every

@@ -18,6 +18,17 @@ android {
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
     }
 
+    // Play upload key, outside the repo; scripts/android-release.sh sets these from the Keychain.
+    val uploadKeystore = System.getenv("SOVRA_UPLOAD_KEYSTORE")?.let(::file)?.takeIf { it.exists() }
+    signingConfigs {
+        if (uploadKeystore != null) create("upload") {
+            storeFile = uploadKeystore
+            storePassword = System.getenv("SOVRA_UPLOAD_PASSWORD")
+            keyAlias = System.getenv("SOVRA_UPLOAD_ALIAS") ?: "upload"
+            keyPassword = System.getenv("SOVRA_UPLOAD_PASSWORD")
+        }
+    }
+
     buildTypes {
         debug {
             // Lives beside the Expo app's dev build on the same phone or emulator.
@@ -25,11 +36,16 @@ android {
         }
         release {
             isMinifyEnabled = false
-            // Local installs only until Play signing is set up.
-            signingConfig = signingConfigs.getByName("debug")
+            // Without the upload key, release builds are debug-signed for local installs only.
+            signingConfig = signingConfigs.findByName("upload") ?: signingConfigs.getByName("debug")
         }
     }
     buildFeatures { compose = true }
+    // The in-memory desktop serves both the unit tests and the on-device screen gallery.
+    sourceSets {
+        getByName("test") { kotlin.srcDir("src/sharedTest/java") }
+        getByName("androidTest") { kotlin.srcDir("src/sharedTest/java") }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
